@@ -222,22 +222,143 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Home Screen"
+    - "Search Screen" 
+    - "Auth Screen"
+    - "Owner Dashboard"
+    - "Add Venue Screen"
+    - "Venue Details Screen"
+    - "Profile Screen with Loyalty"
+  stuck_tasks:
+    - "Home Screen"
+    - "Search Screen"
+    - "Auth Screen"
+    - "Owner Dashboard"
+    - "Add Venue Screen"
+    - "Venue Details Screen"
+    - "Profile Screen with Loyalty"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "stuck_first"
+
+frontend:
+  - task: "Home Screen"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/(tabs)/index.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Home with event types, search CTA, venue cards with badges"
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL: Frontend app stuck on loading screen. App shows 'Start building apps on emergent' but React components never load. Backend APIs working correctly. Expo service running and bundling. Issue appears to be with React app initialization or JavaScript error preventing app from mounting."
+
+  - task: "Search Screen"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/(tabs)/search.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Search with filters, sorting, venue list with commission/promotion badges"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
+
+  - task: "Venue Details Screen"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/venue/[id].tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Details with rules section, map component, amenities, reviews"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
+
+  - task: "Auth Screen"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/auth.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Login/Register with role selection (client/owner)"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
+
+  - task: "Owner Dashboard"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/owner/dashboard.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Stats, quote list with loyalty badges, venue list with promotion modal"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
+
+  - task: "Add Venue Screen"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/owner/add-venue.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Full form with rules, GPS coords, commission tier selection"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
+
+  - task: "Profile Screen with Loyalty"
+    implemented: true
+    working: false
+    file: "/app/frontend/app/(tabs)/profile.tsx"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Profile with loyalty progress, menu items, owner CTA"
+      - working: false
+        agent: "testing"
+        comment: "Cannot test - app not loading past initial screen"
 
 agent_communication:
   - agent: "main"
     message: |
-      Full marketplace backend implementation complete. Please test:
-      1. Registration with both client and owner roles
-      2. Login and JWT authentication
-      3. Create venue as owner (with rules, GPS coords, commission_tier)
-      4. List venues with visibility sorting (by commission and promotions)
-      5. Create quote request as client
-      6. Loyalty tier calculation
-      7. Promotion package purchase
+      Backend testing complete - all APIs working.
+      Now testing frontend screens:
+      1. Home screen loads with event types
+      2. Search and filter venues
+      3. View venue details with rules and map
+      4. Register as client and owner
+      5. Owner dashboard with quotes
+      6. Add venue form
+      7. Profile with loyalty progress
   - agent: "testing"
     message: |
       🎉 BACKEND TESTING COMPLETE - ALL TESTS PASSED (16/16)
@@ -266,3 +387,29 @@ agent_communication:
       • Comprehensive venue sorting and filtering
       
       Backend API is production-ready and fully functional!
+  - agent: "testing"
+    message: |
+      🚨 CRITICAL FRONTEND ISSUE FOUND
+      
+      ❌ FRONTEND TESTING FAILED - APP NOT LOADING
+      
+      PROBLEM: The React app is stuck on the loading screen showing "Start building apps on emergent" and never loads the actual Lumina app components.
+      
+      INVESTIGATION RESULTS:
+      • Backend APIs are working correctly (all endpoints responding)
+      • Expo service is running and bundling successfully
+      • HTML is being served properly
+      • No JavaScript errors visible in console
+      • App restarts don't resolve the issue
+      • Issue persists on both localhost:3000 and preview URL
+      
+      POSSIBLE CAUSES:
+      1. React app initialization failure
+      2. AuthContext API call hanging or failing silently
+      3. Expo Router configuration issue
+      4. JavaScript bundle not executing properly
+      5. Missing dependencies or build configuration issue
+      
+      IMPACT: Cannot test any frontend functionality - all screens inaccessible
+      
+      RECOMMENDATION: Main agent should investigate React app initialization, check for JavaScript errors, and ensure proper Expo configuration.
