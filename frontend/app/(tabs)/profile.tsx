@@ -5,6 +5,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../../src/constants/theme';
 import { useAuth } from '../../src/context/AuthContext';
+import LoyaltyProgress from '../../src/components/LoyaltyProgress';
+import LoyaltyBadge from '../../src/components/LoyaltyBadge';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -18,7 +20,7 @@ export default function ProfileScreen() {
             <Ionicons name="diamond" size={40} color={colors.primary} />
           </View>
           <Text style={styles.appName}>Lumina</Text>
-          <Text style={styles.authSubtext}>Locații curate pentru nopți de neuitat</Text>
+          <Text style={styles.authSubtext}>Marketplace-ul nr. 1 pentru locații de evenimente din România</Text>
           <TouchableOpacity testID="profile-login-btn" style={styles.primaryBtn} onPress={() => router.push('/auth')}>
             <Text style={styles.primaryBtnText}>Autentifică-te</Text>
           </TouchableOpacity>
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
       { icon: 'business', label: 'Dashboard Proprietar', route: '/owner/dashboard', testId: 'owner-dashboard-btn' },
       { icon: 'add-circle', label: 'Adaugă Locație', route: '/owner/add-venue', testId: 'add-venue-btn' },
     ] : []),
-    { icon: 'calendar', label: 'Rezervările Mele', route: '/(tabs)/bookings', testId: 'my-bookings-btn' },
+    { icon: 'chatbubble-ellipses', label: 'Cererile Mele', route: '/(tabs)/bookings', testId: 'my-quotes-btn' },
     { icon: 'heart', label: 'Favorite', route: null, testId: 'favorites-btn' },
     { icon: 'notifications', label: 'Notificări', route: null, testId: 'notifications-btn' },
     { icon: 'help-circle', label: 'Ajutor', route: null, testId: 'help-btn' },
@@ -63,13 +65,57 @@ export default function ProfileScreen() {
           <View style={styles.userInfo}>
             <Text style={styles.userName}>{user.name}</Text>
             <Text style={styles.userEmail}>{user.email}</Text>
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>
-                {user.role === 'owner' ? 'Proprietar' : 'Utilizator'}
-              </Text>
+            <View style={styles.badgesRow}>
+              <View style={[styles.roleBadge, user.role === 'owner' && styles.ownerBadge]}>
+                <Ionicons 
+                  name={user.role === 'owner' ? 'business' : 'person'} 
+                  size={12} 
+                  color={user.role === 'owner' ? colors.primary : colors.textSecondary} 
+                />
+                <Text style={[styles.roleText, user.role === 'owner' && styles.ownerText]}>
+                  {user.role === 'owner' ? 'Proprietar' : 'Utilizator'}
+                </Text>
+              </View>
+              {user.loyalty_tier && user.role === 'client' && (
+                <LoyaltyBadge tierId={user.loyalty_tier.id} size="small" />
+              )}
             </View>
           </View>
         </View>
+
+        {/* Loyalty Progress - Only for clients */}
+        {user.role === 'client' && user.loyalty_tier && (
+          <View style={styles.loyaltySection}>
+            <Text style={styles.sectionTitle}>Programul tău de loialitate</Text>
+            <LoyaltyProgress
+              currentTier={user.loyalty_tier}
+              totalRequests={user.total_requests || 0}
+            />
+            <View style={styles.loyaltyBenefits}>
+              <Text style={styles.benefitsTitle}>Beneficii nivel {user.loyalty_tier.name}:</Text>
+              <View style={styles.benefitItem}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                <Text style={styles.benefitText}>
+                  {user.loyalty_tier.discount > 0 
+                    ? `${user.loyalty_tier.discount}% reducere la toate locațiile partenere`
+                    : 'Acces la toate locațiile din platformă'}
+                </Text>
+              </View>
+              {user.loyalty_tier.id !== 'bronze' && (
+                <View style={styles.benefitItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                  <Text style={styles.benefitText}>Badge de loialitate vizibil proprietarilor</Text>
+                </View>
+              )}
+              {(user.loyalty_tier.id === 'aur' || user.loyalty_tier.id === 'platina') && (
+                <View style={styles.benefitItem}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                  <Text style={styles.benefitText}>Răspuns prioritar de la proprietari</Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
@@ -78,7 +124,9 @@ export default function ProfileScreen() {
               key={index}
               testID={item.testId}
               style={styles.menuItem}
-              onPress={() => item.route ? router.push(item.route as any) : Alert.alert('În curând', 'Această funcție va fi disponibilă în curând.')}
+              onPress={() => item.route 
+                ? router.push(item.route as any) 
+                : Alert.alert('În curând', 'Această funcție va fi disponibilă în curând.')}
             >
               <View style={styles.menuLeft}>
                 <View style={styles.menuIconWrap}>
@@ -90,6 +138,17 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Owner promo */}
+        {user.role === 'client' && (
+          <View style={styles.ownerPromo}>
+            <Ionicons name="business" size={24} color={colors.primary} />
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={styles.ownerPromoTitle}>Ai o locație de evenimente?</Text>
+              <Text style={styles.ownerPromoText}>Înregistrează-te ca proprietar și începe să primești cereri de ofertă.</Text>
+            </View>
+          </View>
+        )}
 
         {/* Logout */}
         <TouchableOpacity testID="logout-btn" style={styles.logoutBtn} onPress={handleLogout}>
@@ -110,57 +169,133 @@ const styles = StyleSheet.create({
   // Auth prompt
   authPrompt: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl },
   logoCircle: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: colors.surfaceHighlight,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.primary,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   appName: { ...typography.display, color: colors.textPrimary },
   authSubtext: { ...typography.bodyLg, color: colors.textSecondary, textAlign: 'center' },
   primaryBtn: {
-    width: '100%', backgroundColor: colors.primary, paddingVertical: 16,
-    borderRadius: radius.full, alignItems: 'center', marginTop: spacing.md,
+    width: '100%',
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    marginTop: spacing.md,
   },
   primaryBtnText: { ...typography.bodyLg, color: colors.background, fontWeight: '700' },
   secondaryBtn: {
-    width: '100%', borderWidth: 1, borderColor: colors.primary, paddingVertical: 16,
-    borderRadius: radius.full, alignItems: 'center',
+    width: '100%',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: radius.full,
+    alignItems: 'center',
   },
   secondaryBtnText: { ...typography.bodyLg, color: colors.primary, fontWeight: '600' },
   // User Card
   userCard: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.lg,
-    marginTop: spacing.md, backgroundColor: colors.surface, padding: spacing.lg,
-    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   avatarCircle: {
-    width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary,
-    alignItems: 'center', justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: { fontSize: 24, fontWeight: '700', color: colors.background },
   userInfo: { flex: 1 },
   userName: { ...typography.h3, color: colors.textPrimary },
   userEmail: { ...typography.bodySm, color: colors.textSecondary, marginTop: 2 },
+  badgesRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
   roleBadge: {
-    alignSelf: 'flex-start', marginTop: 6, backgroundColor: colors.primary + '20',
-    paddingHorizontal: 10, paddingVertical: 2, borderRadius: radius.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.surfaceHighlight,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.full,
   },
-  roleText: { ...typography.caption, color: colors.primary },
+  ownerBadge: { backgroundColor: colors.primary + '20' },
+  roleText: { ...typography.caption, color: colors.textSecondary, textTransform: 'none' },
+  ownerText: { color: colors.primary },
+  // Loyalty Section
+  loyaltySection: { marginTop: spacing.lg, paddingHorizontal: spacing.lg },
+  sectionTitle: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.sm },
+  loyaltyBenefits: {
+    marginTop: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  benefitsTitle: { ...typography.bodySm, color: colors.textSecondary, fontWeight: '600', marginBottom: spacing.sm },
+  benefitItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+  benefitText: { ...typography.bodySm, color: colors.textSecondary, flex: 1 },
   // Menu
   menuSection: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
   menuItem: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   menuLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   menuIconWrap: {
-    width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surfaceHighlight,
-    alignItems: 'center', justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceHighlight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuLabel: { ...typography.bodyLg, color: colors.textPrimary },
+  // Owner promo
+  ownerPromo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.primary + '40',
+  },
+  ownerPromoTitle: { ...typography.bodyLg, color: colors.textPrimary, fontWeight: '600' },
+  ownerPromoText: { ...typography.bodySm, color: colors.textSecondary, marginTop: 2 },
   // Logout
   logoutBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
-    marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingVertical: 14,
-    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.error + '40',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    paddingVertical: 14,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.error + '40',
   },
   logoutText: { ...typography.bodyLg, color: colors.error, fontWeight: '600' },
 });

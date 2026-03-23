@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 
@@ -20,7 +20,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI()
+app = FastAPI(title="Lumina - Marketplace Locații Evenimente")
 api_router = APIRouter(prefix="/api")
 
 JWT_SECRET = "lumina-event-venue-secret-key-2024"
@@ -29,6 +29,28 @@ security = HTTPBearer(auto_error=False)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# ─── Loyalty Tiers Configuration ───
+LOYALTY_TIERS = {
+    "bronze": {"name": "Bronze", "min_requests": 0, "discount": 0, "color": "#CD7F32"},
+    "argint": {"name": "Argint", "min_requests": 3, "discount": 5, "color": "#C0C0C0"},
+    "aur": {"name": "Aur", "min_requests": 10, "discount": 10, "color": "#FFD700"},
+    "platina": {"name": "Platină", "min_requests": 25, "discount": 15, "color": "#E5E4E2"},
+}
+
+# ─── Commission Tiers for Visibility ───
+COMMISSION_TIERS = {
+    "standard": {"rate": 10, "boost": 0, "badge": None},
+    "premium": {"rate": 15, "boost": 50, "badge": "Recomandat"},
+    "elite": {"rate": 20, "boost": 100, "badge": "Top Alegere"},
+}
+
+# ─── Promotion Packages ───
+PROMOTION_PACKAGES = {
+    "bronze": {"name": "Pachet Bronze", "days": 7, "price": 49, "boost": 30, "badge": None},
+    "silver": {"name": "Pachet Silver", "days": 14, "price": 89, "boost": 60, "badge": "Promovat"},
+    "gold": {"name": "Pachet Gold", "days": 30, "price": 149, "boost": 100, "badge": "Top Promovat", "homepage_banner": True},
+}
 
 # ─── Models ───
 
@@ -47,8 +69,11 @@ class UserLogin(BaseModel):
 class VenueCreate(BaseModel):
     name: str
     description: str
+    rules: str = ""  # Venue rules section
     city: str
     address: str = ""
+    latitude: Optional[float] = None  # GPS coordinates
+    longitude: Optional[float] = None
     price_per_person: Optional[float] = None
     price_type: str = "on_request"  # "fixed" or "on_request"
     capacity_min: int = 10
@@ -60,12 +85,16 @@ class VenueCreate(BaseModel):
     contact_phone: str = ""
     contact_email: str = ""
     contact_person: str = ""
+    commission_tier: str = "standard"  # "standard", "premium", "elite"
 
 class VenueUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    rules: Optional[str] = None
     city: Optional[str] = None
     address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     price_per_person: Optional[float] = None
     price_type: Optional[str] = None
     capacity_min: Optional[int] = None
@@ -77,6 +106,7 @@ class VenueUpdate(BaseModel):
     contact_phone: Optional[str] = None
     contact_email: Optional[str] = None
     contact_person: Optional[str] = None
+    commission_tier: Optional[str] = None
 
 class QuoteRequest(BaseModel):
     venue_id: str
@@ -91,6 +121,10 @@ class ReviewCreate(BaseModel):
     rating: int
     comment: str
 
+class PromotionPurchase(BaseModel):
+    venue_id: str
+    package: str  # "bronze", "silver", "gold"
+
 # ─── Auth Helpers ───
 
 def hash_password(password: str) -> str:
@@ -102,6 +136,14 @@ def verify_password(password: str, hashed: str) -> bool:
 def create_token(user_id: str, role: str) -> str:
     return jwt.encode({"user_id": user_id, "role": role}, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+def get_loyalty_tier(request_count: int) -> dict:
+    """Calculate user's loyalty tier based on completed requests"""
+    tier_id = "bronze"
+    for tid, config in LOYALTY_TIERS.items():
+        if request_count >= config["min_requests"]:
+            tier_id = tid
+    return {"id": tier_id, **LOYALTY_TIERS[tier_id]}
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     if not credentials:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -110,6 +152,10 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
+        # Calculate loyalty tier
+        request_count = await db.quotes.count_documents({"client_id": user["id"]})
+        user["loyalty_tier"] = get_loyalty_tier(request_count)
+        user["total_requests"] = request_count
         return user
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -119,7 +165,12 @@ async def get_optional_user(credentials: HTTPAuthorizationCredentials = Depends(
         return None
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
+        user = await db.users.find_one({"id": payload["user_id"]}, {"_id": 0, "password": 0})
+        if user:
+            request_count = await db.quotes.count_documents({"client_id": user["id"]})
+            user["loyalty_tier"] = get_loyalty_tier(request_count)
+            user["total_requests"] = request_count
+        return user
     except Exception:
         return None
 
@@ -144,9 +195,14 @@ async def register(data: UserRegister):
     }
     await db.users.insert_one(user)
     token = create_token(user_id, data.role)
+    loyalty_tier = get_loyalty_tier(0)
     return {
         "token": token,
-        "user": {"id": user_id, "name": user["name"], "first_name": data.first_name, "last_name": data.last_name, "email": data.email, "phone": data.phone, "role": data.role}
+        "user": {
+            "id": user_id, "name": user["name"], "first_name": data.first_name, 
+            "last_name": data.last_name, "email": data.email, "phone": data.phone, 
+            "role": data.role, "loyalty_tier": loyalty_tier, "total_requests": 0
+        }
     }
 
 @api_router.post("/auth/login")
@@ -155,9 +211,16 @@ async def login(data: UserLogin):
     if not user or not verify_password(data.password, user["password"]):
         raise HTTPException(status_code=401, detail="Credențiale invalide")
     token = create_token(user["id"], user["role"])
+    request_count = await db.quotes.count_documents({"client_id": user["id"]})
+    loyalty_tier = get_loyalty_tier(request_count)
     return {
         "token": token,
-        "user": {"id": user["id"], "name": user["name"], "first_name": user.get("first_name", ""), "last_name": user.get("last_name", ""), "email": user["email"], "phone": user.get("phone", ""), "role": user["role"]}
+        "user": {
+            "id": user["id"], "name": user["name"], "first_name": user.get("first_name", ""), 
+            "last_name": user.get("last_name", ""), "email": user["email"], 
+            "phone": user.get("phone", ""), "role": user["role"],
+            "loyalty_tier": loyalty_tier, "total_requests": request_count
+        }
     }
 
 @api_router.get("/auth/me")
@@ -174,7 +237,7 @@ async def list_venues(
     price_max: Optional[float] = None,
     capacity_min: Optional[int] = None,
     style: Optional[str] = None,
-    sort_by: Optional[str] = "newest"
+    sort_by: Optional[str] = "recommended"
 ):
     query = {"status": "active"}
     if search:
@@ -194,22 +257,59 @@ async def list_venues(
     if style:
         query["style_tags"] = {"$in": [style]}
 
-    sort_field = "created_at"
-    sort_dir = -1
-    if sort_by == "price_asc":
-        sort_field = "price_per_person"
-        sort_dir = 1
+    venues = await db.venues.find(query, {"_id": 0}).to_list(200)
+    
+    # Calculate visibility score for each venue
+    now = datetime.now(timezone.utc)
+    for venue in venues:
+        score = 0
+        # Commission tier boost
+        tier = venue.get("commission_tier", "standard")
+        score += COMMISSION_TIERS.get(tier, {}).get("boost", 0)
+        
+        # Active promotion boost
+        promo = venue.get("active_promotion")
+        if promo and promo.get("expires_at"):
+            exp = datetime.fromisoformat(promo["expires_at"].replace("Z", "+00:00"))
+            if exp > now:
+                score += promo.get("boost", 0)
+                venue["promotion_badge"] = promo.get("badge")
+            else:
+                venue["active_promotion"] = None
+        
+        # Commission badge
+        comm_badge = COMMISSION_TIERS.get(tier, {}).get("badge")
+        if comm_badge and not venue.get("promotion_badge"):
+            venue["commission_badge"] = comm_badge
+        
+        venue["visibility_score"] = score
+    
+    # Sort venues
+    if sort_by == "recommended":
+        venues.sort(key=lambda v: (-v.get("visibility_score", 0), -v.get("avg_rating", 0), v.get("created_at", "")), reverse=False)
+        venues.sort(key=lambda v: v.get("visibility_score", 0), reverse=True)
+    elif sort_by == "price_asc":
+        venues.sort(key=lambda v: v.get("price_per_person") or 99999)
     elif sort_by == "price_desc":
-        sort_field = "price_per_person"
-        sort_dir = -1
+        venues.sort(key=lambda v: v.get("price_per_person") or 0, reverse=True)
     elif sort_by == "rating":
-        sort_field = "avg_rating"
-        sort_dir = -1
+        venues.sort(key=lambda v: v.get("avg_rating", 0), reverse=True)
     elif sort_by == "capacity":
-        sort_field = "capacity_max"
-        sort_dir = -1
+        venues.sort(key=lambda v: v.get("capacity_max", 0), reverse=True)
+    elif sort_by == "newest":
+        venues.sort(key=lambda v: v.get("created_at", ""), reverse=True)
+    
+    return venues
 
-    venues = await db.venues.find(query, {"_id": 0}).sort(sort_field, sort_dir).to_list(100)
+@api_router.get("/venues/promoted")
+async def get_promoted_venues():
+    """Get venues with active gold promotions for homepage banner"""
+    now = datetime.now(timezone.utc).isoformat()
+    venues = await db.venues.find({
+        "status": "active",
+        "active_promotion.package": "gold",
+        "active_promotion.expires_at": {"$gt": now}
+    }, {"_id": 0}).to_list(10)
     return venues
 
 @api_router.get("/venues/owner/mine")
@@ -240,6 +340,8 @@ async def create_venue(data: VenueCreate, user=Depends(get_current_user)):
         "avg_rating": 0,
         "review_count": 0,
         "quote_count": 0,
+        "view_count": 0,
+        "active_promotion": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.venues.insert_one(venue)
@@ -269,6 +371,53 @@ async def delete_venue(venue_id: str, user=Depends(get_current_user)):
     await db.venues.delete_one({"id": venue_id})
     return {"message": "Locația a fost ștearsă"}
 
+# ─── Promotion Routes ───
+
+@api_router.post("/venues/{venue_id}/promote")
+async def purchase_promotion(venue_id: str, data: PromotionPurchase, user=Depends(get_current_user)):
+    """Purchase a promotion package for a venue"""
+    venue = await db.venues.find_one({"id": venue_id})
+    if not venue:
+        raise HTTPException(status_code=404, detail="Locația nu a fost găsită")
+    if venue["owner_id"] != user["id"]:
+        raise HTTPException(status_code=403, detail="Nu ești proprietarul acestei locații")
+    
+    package = PROMOTION_PACKAGES.get(data.package)
+    if not package:
+        raise HTTPException(status_code=400, detail="Pachet invalid")
+    
+    # Calculate expiration
+    expires_at = datetime.now(timezone.utc) + timedelta(days=package["days"])
+    
+    promotion = {
+        "package": data.package,
+        "name": package["name"],
+        "boost": package["boost"],
+        "badge": package.get("badge"),
+        "homepage_banner": package.get("homepage_banner", False),
+        "purchased_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": expires_at.isoformat()
+    }
+    
+    await db.venues.update_one({"id": venue_id}, {"$set": {"active_promotion": promotion}})
+    
+    # Log promotion purchase
+    await db.promotion_purchases.insert_one({
+        "id": str(uuid.uuid4()),
+        "venue_id": venue_id,
+        "owner_id": user["id"],
+        "package": data.package,
+        "price": package["price"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": f"Promovare {package['name']} activată pentru {package['days']} zile", "promotion": promotion}
+
+@api_router.get("/promotions/packages")
+async def get_promotion_packages():
+    """Get available promotion packages"""
+    return PROMOTION_PACKAGES
+
 # ─── Quote Request Routes (Cere ofertă) ───
 
 @api_router.post("/quotes")
@@ -276,6 +425,11 @@ async def request_quote(data: QuoteRequest, user=Depends(get_current_user)):
     venue = await db.venues.find_one({"id": data.venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Locația nu a fost găsită")
+    
+    # Get user's loyalty tier for potential discount
+    request_count = await db.quotes.count_documents({"client_id": user["id"]})
+    loyalty_tier = get_loyalty_tier(request_count)
+    
     quote_id = str(uuid.uuid4())
     quote = {
         "id": quote_id,
@@ -283,6 +437,8 @@ async def request_quote(data: QuoteRequest, user=Depends(get_current_user)):
         "client_name": user["name"],
         "client_email": user["email"],
         "client_phone": data.client_phone or user.get("phone", ""),
+        "client_loyalty_tier": loyalty_tier["id"],
+        "client_discount": loyalty_tier["discount"],
         "venue_id": data.venue_id,
         "venue_name": venue["name"],
         "venue_image": venue["images"][0] if venue.get("images") else "",
@@ -323,7 +479,7 @@ async def update_quote_status(quote_id: str, status: str, user=Depends(get_curre
         raise HTTPException(status_code=403, detail="Nu ești autorizat")
     if status not in ["responded", "rejected", "pending"]:
         raise HTTPException(status_code=400, detail="Status invalid")
-    await db.quotes.update_one({"id": quote_id}, {"$set": {"status": status}})
+    await db.quotes.update_one({"id": quote_id}, {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"message": f"Cerere actualizată: {status}"}
 
 # ─── Review Routes ───
@@ -369,11 +525,40 @@ async def owner_stats(user=Depends(get_current_user)):
     total_quotes = await db.quotes.count_documents({"venue_id": {"$in": venue_ids}})
     pending = await db.quotes.count_documents({"venue_id": {"$in": venue_ids}, "status": "pending"})
     responded = await db.quotes.count_documents({"venue_id": {"$in": venue_ids}, "status": "responded"})
+    total_views = sum(v.get("view_count", 0) for v in my_venues)
     return {
         "total_venues": len(my_venues),
         "total_quotes": total_quotes,
         "pending_quotes": pending,
-        "responded_quotes": responded
+        "responded_quotes": responded,
+        "total_views": total_views
+    }
+
+# ─── Loyalty Program Info ───
+
+@api_router.get("/loyalty/tiers")
+async def get_loyalty_tiers():
+    """Get all loyalty tier information"""
+    return LOYALTY_TIERS
+
+@api_router.get("/loyalty/my-progress")
+async def my_loyalty_progress(user=Depends(get_current_user)):
+    """Get user's loyalty progress"""
+    request_count = await db.quotes.count_documents({"client_id": user["id"]})
+    current_tier = get_loyalty_tier(request_count)
+    
+    # Find next tier
+    next_tier = None
+    for tid, config in LOYALTY_TIERS.items():
+        if config["min_requests"] > request_count:
+            next_tier = {"id": tid, **config}
+            break
+    
+    return {
+        "current_tier": current_tier,
+        "total_requests": request_count,
+        "next_tier": next_tier,
+        "requests_to_next": next_tier["min_requests"] - request_count if next_tier else 0
     }
 
 # ─── Config / Enums ───
@@ -403,14 +588,17 @@ async def get_config():
             "Fotograf / Videograf", "Bar", "Terasă", "Grădină", "Piscină",
             "Scenă", "Echipament AV", "WiFi", "Climatizare", "Cameră mirilor",
             "Acces persoane cu dizabilități"
-        ]
+        ],
+        "loyalty_tiers": LOYALTY_TIERS,
+        "commission_tiers": COMMISSION_TIERS,
+        "promotion_packages": PROMOTION_PACKAGES,
     }
 
 # ─── Health ───
 
 @api_router.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "app": "Lumina Marketplace"}
 
 app.include_router(api_router)
 
@@ -424,24 +612,19 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    # Drop old seeded data
-    await db.venues.delete_many({})
-    await db.reviews.delete_many({})
-    await db.users.delete_many({})
-    await db.quotes.delete_many({})
-    await db.bookings.delete_many({})
-    await db.status_checks.delete_many({})
-
+    # Create indexes
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)
     await db.venues.create_index("id", unique=True)
     await db.venues.create_index("owner_id")
     await db.venues.create_index("status")
     await db.venues.create_index([("city", 1), ("event_types", 1)])
+    await db.venues.create_index("commission_tier")
     await db.quotes.create_index("id", unique=True)
     await db.quotes.create_index("client_id")
     await db.quotes.create_index("venue_id")
     await db.reviews.create_index("venue_id")
+    await db.promotion_purchases.create_index("venue_id")
     logger.info("Lumina Event Venue Marketplace API started")
 
 @app.on_event("shutdown")
