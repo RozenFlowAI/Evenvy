@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiCall, authHeaders, User, LoyaltyTier } from '../utils/api';
 
+console.log('AuthContext module loaded');
+
 type AuthContextType = {
   user: User | null;
   token: string | null;
@@ -28,22 +30,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('AuthProvider rendering, loading:', loading);
+
   useEffect(() => {
+    console.log('AuthProvider useEffect - calling loadStoredAuth');
     loadStoredAuth();
   }, []);
 
   const loadStoredAuth = async () => {
+    console.log('loadStoredAuth started');
     try {
       const storedToken = await AsyncStorage.getItem('auth_token');
+      console.log('storedToken:', storedToken ? 'found' : 'none');
       if (storedToken) {
         setToken(storedToken);
-        const userData = await apiCall('/auth/me', { headers: authHeaders(storedToken) });
-        setUser(userData);
+        try {
+          const userData = await apiCall('/auth/me', { headers: authHeaders(storedToken) });
+          console.log('userData loaded:', userData?.name);
+          setUser(userData);
+        } catch (apiError) {
+          console.error('API error loading user:', apiError);
+          await AsyncStorage.removeItem('auth_token');
+        }
       }
     } catch (error) {
       console.error('Failed to load auth:', error);
       await AsyncStorage.removeItem('auth_token');
     } finally {
+      console.log('loadStoredAuth finished, setting loading to false');
       setLoading(false);
     }
   };
