@@ -1,19 +1,30 @@
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
+console.log('API initialized with BACKEND_URL:', BACKEND_URL);
+
 export async function apiCall(endpoint: string, options: RequestInit = {}) {
   const url = `${BACKEND_URL}/api${endpoint}`;
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'Cererea a eșuat' }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
+  console.log('API Call:', url);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Cererea a eșuat' }));
+      console.error('API Error:', endpoint, error);
+      throw new Error(error.detail || `HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    console.log('API Success:', endpoint);
+    return data;
+  } catch (error) {
+    console.error('API Exception:', endpoint, error);
+    throw error;
   }
-  return response.json();
 }
 
 export function authHeaders(token: string) {

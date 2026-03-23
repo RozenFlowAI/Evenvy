@@ -3,11 +3,14 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/constants/theme';
 
+console.log('TabLayout loaded');
+
 function TabIcon({ name, color, size }: { name: React.ComponentProps<typeof Ionicons>['name']; color: string; size: number }) {
   return <Ionicons name={name} size={size} color={color} />;
 }
 
 export default function TabLayout() {
+  console.log('TabLayout rendering');
   return (
     <Tabs
       screenOptions={{
