@@ -1,0 +1,189 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Lumina",
+      "tagline": "Curated Spaces for Unforgettable Nights",
+      "tone": "Elegant, Exclusive, Nocturnal, Trustworthy",
+      "description": "A luxury event venue booking app that feels like a high-end lifestyle magazine. Dark, mysterious, and premium."
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Playfair Display, serif",
+        "body": "Lato, sans-serif",
+        "notes": "Use @expo-google-fonts/playfair-display for Headings and @expo-google-fonts/lato for Body. If custom fonts fail, fallback to System Serif (iOS: Times New Roman, Android: serif) and System Sans (iOS: San Francisco, Android: Roboto)."
+      },
+      "scale": {
+        "display": { "size": 32, "line_height": 40, "weight": "700", "tracking": -0.5 },
+        "h1": { "size": 28, "line_height": 34, "weight": "700", "tracking": -0.5 },
+        "h2": { "size": 24, "line_height": 30, "weight": "600", "tracking": 0 },
+        "h3": { "size": 20, "line_height": 26, "weight": "600", "tracking": 0.1 },
+        "body_lg": { "size": 16, "line_height": 24, "weight": "400", "tracking": 0.2 },
+        "body_sm": { "size": 14, "line_height": 20, "weight": "400", "tracking": 0.2 },
+        "caption": { "size": 12, "line_height": 16, "weight": "500", "tracking": 0.5, "transform": "uppercase" }
+      }
+    },
+    "colors": {
+      "theme": "dark",
+      "palette": {
+        "background": {
+          "default": "#050505",
+          "surface": "#121212",
+          "surface_highlight": "#1E1E1E",
+          "overlay": "rgba(0,0,0,0.7)"
+        },
+        "text": {
+          "primary": "#FFFFFF",
+          "secondary": "#A1A1AA",
+          "tertiary": "#52525B",
+          "inverse": "#000000"
+        },
+        "primary": {
+          "main": "#D4AF37",
+          "light": "#F3E5AB",
+          "dark": "#997B1E",
+          "contrast": "#000000"
+        },
+        "status": {
+          "success": "#10B981",
+          "error": "#EF4444",
+          "warning": "#F59E0B",
+          "info": "#3B82F6"
+        },
+        "border": {
+          "default": "#27272A",
+          "active": "#D4AF37"
+        }
+      }
+    },
+    "spacing": {
+      "xs": 4,
+      "sm": 8,
+      "md": 16,
+      "lg": 24,
+      "xl": 32,
+      "xxl": 48,
+      "section_gap": 40
+    },
+    "layout": {
+      "border_radius": {
+        "sm": 4,
+        "md": 8,
+        "lg": 16,
+        "xl": 24,
+        "full": 9999
+      },
+      "touch_target": 48,
+      "safe_area_padding": true
+    },
+    "shadows": {
+      "card": {
+        "shadowColor": "#000",
+        "shadowOffset": { "width": 0, "height": 4 },
+        "shadowOpacity": 0.3,
+        "shadowRadius": 4.65,
+        "elevation": 8
+      },
+      "glow": {
+        "shadowColor": "#D4AF37",
+        "shadowOffset": { "width": 0, "height": 0 },
+        "shadowOpacity": 0.2,
+        "shadowRadius": 10,
+        "elevation": 5
+      }
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": {
+        "backgroundColor": "#D4AF37",
+        "paddingVertical": 16,
+        "borderRadius": 9999,
+        "alignItems": "center",
+        "textStyle": { "color": "#000000", "fontWeight": "700", "fontSize": 16, "fontFamily": "System" }
+      },
+      "secondary": {
+        "backgroundColor": "transparent",
+        "borderWidth": 1,
+        "borderColor": "#D4AF37",
+        "paddingVertical": 16,
+        "borderRadius": 9999,
+        "alignItems": "center",
+        "textStyle": { "color": "#D4AF37", "fontWeight": "600", "fontSize": 16 }
+      },
+      "ghost": {
+        "backgroundColor": "transparent",
+        "paddingVertical": 12,
+        "alignItems": "center",
+        "textStyle": { "color": "#FFFFFF", "fontSize": 14, "textDecorationLine": "underline" }
+      }
+    },
+    "inputs": {
+      "default": {
+        "backgroundColor": "#1E1E1E",
+        "borderRadius": 12,
+        "padding": 16,
+        "color": "#FFFFFF",
+        "fontSize": 16,
+        "borderWidth": 1,
+        "borderColor": "#27272A"
+      },
+      "focused": {
+        "borderColor": "#D4AF37"
+      }
+    },
+    "cards": {
+      "venue": {
+        "backgroundColor": "#121212",
+        "borderRadius": 16,
+        "overflow": "hidden",
+        "marginBottom": 24,
+        "elevation": 5
+      }
+    }
+  },
+  "assets": {
+    "images": {
+      "onboarding": "https://images.unsplash.com/photo-1758135986599-a78386aa026d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzJ8MHwxfHNlYXJjaHwzfHxsdXh1cnklMjB3ZWRkaW5nJTIwdmVudWUlMjBpbnRlcmlvciUyMG5pZ2h0fGVufDB8fHx8MTc3NDI2MTE4NXww&ixlib=rb-4.1.0&q=85",
+      "placeholders": {
+        "wedding": "https://images.pexels.com/photos/1035665/pexels-photo-1035665.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "corporate": "https://images.unsplash.com/photo-1771911650360-31fdb3344c74?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBldmVudCUyMGhhbGwlMjBtb2Rlcm58ZW58MHx8fHwxNzc0MjYxMTg2fDA&ixlib=rb-4.1.0&q=85",
+        "party": "https://images.unsplash.com/photo-1563138216-8ff2e182ccbd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHwyfHxwYXJ0eSUyMHZlbnVlJTIwcm9vZnRvcCUyMG5pZ2h0fGVufDB8fHx8MTc3NDI2MTE4N3ww&ixlib=rb-4.1.0&q=85",
+        "conference": "https://images.unsplash.com/photo-1762176263996-a0713a49ee4d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHw0fHxjb3Jwb3JhdGUlMjBldmVudCUyMGhhbGwlMjBtb2Rlcm58ZW58MHx8fHwxNzc0MjYxMTg2fDA&ixlib=rb-4.1.0&q=85"
+      },
+      "categories": [
+        { "id": "wedding", "label": "Weddings", "image": "https://images.pexels.com/photos/12919431/pexels-photo-12919431.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" },
+        { "id": "corporate", "label": "Corporate", "image": "https://images.unsplash.com/photo-1771911646904-61f0fc9033e2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA3MDB8MHwxfHNlYXJjaHwyfHxjb3Jwb3JhdGUlMjBldmVudCUyMGhhbGwlMjBtb2Rlcm58ZW58MHx8fHwxNzc0MjYxMTg2fDA&ixlib=rb-4.1.0&q=85" },
+        { "id": "party", "label": "Parties", "image": "https://images.unsplash.com/photo-1650727280099-13c5c01bc2c7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNDR8MHwxfHNlYXJjaHw0fHxwYXJ0eSUyMHZlbnVlJTIwcm9vZnRvcCUyMG5pZ2h0fGVufDB8fHx8MTc3NDI2MTE4N3ww&ixlib=rb-4.1.0&q=85" }
+      ]
+    },
+    "icons": {
+      "library": "@expo/vector-icons",
+      "sets": ["Ionicons", "MaterialCommunityIcons", "Feather"],
+      "style": "Stroke (Outline) for inactive, Filled for active"
+    }
+  },
+  "react_native_rules": {
+    "styling": {
+      "engine": "StyleSheet.create",
+      "units": "dp (density-independent pixels)",
+      "flexbox": "Use Flexbox for everything. default flexDirection is column in RN.",
+      "safe_area": "ALWAYS use SafeAreaView from react-native-safe-area-context for root containers."
+    },
+    "navigation": {
+      "library": "expo-router",
+      "structure": "File-based routing (/app directory)",
+      "tabs": "Use Tabs from expo-router for main navigation."
+    },
+    "performance": {
+      "lists": "Use FlatList for lists of data. Do NOT use ScrollView for large lists.",
+      "images": "Use Image from expo-image if available, otherwise standard Image. Always set dimensions."
+    }
+  },
+  "guidelines_for_agent": {
+    "general": "You are building a React Native Expo app, NOT a React Web app. Do not use HTML tags like <div>, <p>, <span>. Use <View>, <Text>, <TouchableOpacity>. Do not use 'className', use 'style'.",
+    "theme_implementation": "Hardcode the Dark Theme colors for now to ensure consistency. Do not rely on system theme detection unless specified.",
+    "layout_strategy": "Use a 'Bento' grid style for the Discovery/Home page. Mix large vertical cards with smaller square cards.",
+    "booking_flow": "Keep it contact-based. The 'Book' button should open a modal/screen to fill out a request form (Date, Guest Count, Message), which then sends a request (mocked API).",
+    "owner_dashboard": "Keep it clean. List properties with status (Active/Pending). Show upcoming bookings in a simple list."
+  }
+}
