@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiCall, authHeaders, User, LoyaltyTier } from '../utils/api';
-
-console.log('AuthContext module loaded');
+import { apiCall, authHeaders, User } from '../utils/api';
 
 type AuthContextType = {
   user: User | null;
@@ -30,37 +28,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('AuthProvider rendering, loading:', loading);
-
   useEffect(() => {
-    console.log('AuthProvider useEffect - calling loadStoredAuth');
-    loadStoredAuth();
-  }, []);
-
-  const loadStoredAuth = async () => {
-    console.log('loadStoredAuth started');
-    try {
-      const storedToken = await AsyncStorage.getItem('auth_token');
-      console.log('storedToken:', storedToken ? 'found' : 'none');
-      if (storedToken) {
-        setToken(storedToken);
-        try {
-          const userData = await apiCall('/auth/me', { headers: authHeaders(storedToken) });
-          console.log('userData loaded:', userData?.name);
-          setUser(userData);
-        } catch (apiError) {
-          console.error('API error loading user:', apiError);
-          await AsyncStorage.removeItem('auth_token');
+    let isMounted = true;
+    
+    const loadAuth = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('auth_token');
+        if (storedToken && isMounted) {
+          setToken(storedToken);
+          try {
+            const userData = await apiCall('/auth/me', { headers: authHeaders(storedToken) });
+            if (isMounted) setUser(userData);
+          } catch {
+            await AsyncStorage.removeItem('auth_token');
+          }
         }
+      } catch (error) {
+        console.error('Auth load error:', error);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    } catch (error) {
-      console.error('Failed to load auth:', error);
-      await AsyncStorage.removeItem('auth_token');
-    } finally {
-      console.log('loadStoredAuth finished, setting loading to false');
-      setLoading(false);
-    }
-  };
+    };
+
+    // Start loading auth
+    loadAuth();
+
+    // Safety timeout - ensure loading becomes false after 3 seconds max
+    const timeout = setTimeout(() => {
+      if (isMounted && loading) {
+        setLoading(false);
+      }
+    }, 3000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     const response = await apiCall('/auth/login', {

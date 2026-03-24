@@ -1,45 +1,48 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-
-console.log('RootLayout module loaded');
+import { colors } from '../src/constants/theme';
 
 // Prevent splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
   const { loading } = useAuth();
-
-  console.log('RootLayoutNav rendering, loading:', loading);
+  const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    console.log('RootLayoutNav useEffect, loading:', loading);
-    if (!loading) {
-      // Hide splash screen when auth loading is complete
-      console.log('Calling SplashScreen.hideAsync()');
-      SplashScreen.hideAsync().then(() => {
-        console.log('SplashScreen hidden successfully');
-      }).catch((err) => {
-        console.error('SplashScreen.hideAsync error:', err);
-      });
-    }
-  }, [loading]);
+    // Add a small delay to ensure everything is mounted
+    const timer = setTimeout(() => {
+      setAppReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Show nothing while loading (splash screen is visible)
+  useEffect(() => {
+    if (!loading && appReady) {
+      // Hide splash screen
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [loading, appReady]);
+
+  // Show a loading indicator while auth is loading
   if (loading) {
-    console.log('RootLayoutNav returning null due to loading');
-    return null;
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
-  console.log('RootLayoutNav rendering Stack');
   return (
     <>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: '#050505' },
+          contentStyle: { backgroundColor: colors.background },
           animation: 'slide_from_right',
         }}
       >
@@ -53,6 +56,15 @@ function RootLayoutNav() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
 
 export default function RootLayout() {
   return (
