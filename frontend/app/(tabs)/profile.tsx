@@ -19,7 +19,7 @@ export default function ProfileScreen() {
           <View style={styles.logoCircle}>
             <Ionicons name="diamond" size={40} color={colors.primary} />
           </View>
-          <Text style={styles.appName}>Lumina</Text>
+          <Text style={styles.appName}>Venvy</Text>
           <Text style={styles.authSubtext}>Marketplace-ul nr. 1 pentru locații de evenimente din România</Text>
           <TouchableOpacity testID="profile-login-btn" style={styles.primaryBtn} onPress={() => router.push('/auth')}>
             <Text style={styles.primaryBtnText}>Autentifică-te</Text>

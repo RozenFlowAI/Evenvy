@@ -58,7 +58,7 @@ export default function AuthScreen() {
             <Ionicons name="diamond" size={32} color={colors.primary} />
             <Text style={styles.title}>{isLogin ? 'Autentificare' : 'Înregistrare'}</Text>
             <Text style={styles.subtitle}>
-              {isLogin ? 'Bine ai revenit pe Lumina' : 'Creează un cont pentru a începe'}
+              {isLogin ? 'Bine ai revenit pe Venvy' : 'Creează un cont pentru a începe'}
             </Text>
           </View>
 
