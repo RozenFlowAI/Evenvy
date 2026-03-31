@@ -3,46 +3,42 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack, SplashScreen } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
-import { colors } from '../src/constants/theme';
+import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
   const { loading } = useAuth();
+  const { theme, isDark } = useTheme();
   const [appReady, setAppReady] = useState(false);
 
   useEffect(() => {
-    // Add a small delay to ensure everything is mounted
-    const timer = setTimeout(() => {
-      setAppReady(true);
-    }, 100);
+    const timer = setTimeout(() => setAppReady(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (!loading && appReady) {
-      // Hide splash screen
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [loading, appReady]);
 
-  // Show a loading indicator while auth is loading
   if (loading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={[styles.loading, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.background },
+          contentStyle: { backgroundColor: theme.colors.background },
           animation: 'slide_from_right',
         }}
       >
@@ -60,7 +56,6 @@ function RootLayoutNav() {
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
-    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -68,8 +63,10 @@ const styles = StyleSheet.create({
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
