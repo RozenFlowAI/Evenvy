@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Venvy",
-    "slug": "venvy",
+    "name": "Evenvy",
+    "slug": "evenvy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "venvy",
+    "scheme": "evenvy",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

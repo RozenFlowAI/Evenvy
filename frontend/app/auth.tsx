@@ -38,7 +38,14 @@ export default function AuthScreen() {
       if (isLogin) {
         await login(email.trim(), password);
       } else {
-        await register(firstName.trim(), lastName.trim(), email.trim(), password, phone.trim(), role);
+        await register({
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          email: email.trim(),
+          password: password,
+          phone: phone.trim(),
+          role: role as 'client' | 'owner',
+        });
       }
       router.replace('/(tabs)');
     } catch (e: any) {
@@ -58,7 +65,7 @@ export default function AuthScreen() {
             <Ionicons name="diamond" size={32} color={colors.primary} />
             <Text style={styles.title}>{isLogin ? 'Autentificare' : 'Înregistrare'}</Text>
             <Text style={styles.subtitle}>
-              {isLogin ? 'Bine ai revenit pe Venvy' : 'Creează un cont pentru a începe'}
+              {isLogin ? 'Bine ai revenit pe Evenvy' : 'Creează un cont pentru a începe'}
             </Text>
           </View>
 

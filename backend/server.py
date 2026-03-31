@@ -20,7 +20,7 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-app = FastAPI(title="Venvy - Marketplace Locații Evenimente")
+app = FastAPI(title="Evenvy - Marketplace Locații Evenimente")
 api_router = APIRouter(prefix="/api")
 
 JWT_SECRET = "lumina-event-venue-secret-key-2024"
@@ -598,7 +598,7 @@ async def get_config():
 
 @api_router.get("/health")
 async def health():
-    return {"status": "ok", "app": "Venvy Marketplace"}
+    return {"status": "ok", "app": "Evenvy Marketplace"}
 
 app.include_router(api_router)
 
@@ -625,7 +625,7 @@ async def startup():
     await db.quotes.create_index("venue_id")
     await db.reviews.create_index("venue_id")
     await db.promotion_purchases.create_index("venue_id")
-    logger.info("Venvy Event Venue Marketplace API started")
+    logger.info("Evenvy Event Venue Marketplace API started")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

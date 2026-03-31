@@ -23,7 +23,7 @@ export default function ProfileScreen() {
           <View style={[styles.logoCircle, { backgroundColor: c.surfaceHighlight, borderColor: c.primary }]}>
             <Ionicons name="diamond" size={40} color={c.primary} />
           </View>
-          <Text style={[styles.appName, { color: c.textPrimary }]}>Venvy</Text>
+          <Text style={[styles.appName, { color: c.textPrimary }]}>Evenvy</Text>
           <Text style={[styles.authSubtext, { color: c.textSecondary }]}>Marketplace-ul nr. 1 pentru locații de evenimente din România</Text>
           <TouchableOpacity testID="profile-login-btn" style={[styles.primaryBtn, { backgroundColor: c.primary }]} onPress={() => router.push('/auth')}>
             <Text style={styles.primaryBtnText}>Autentifică-te</Text>

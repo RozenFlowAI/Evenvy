@@ -71,7 +71,7 @@ export default function HomeScreen() {
               <View style={[styles.logoIcon, { backgroundColor: c.primary + '20' }]}>
                 <Ionicons name="diamond" size={20} color={c.primary} />
               </View>
-              <Text style={[styles.logoText, { color: c.textPrimary }]}>Venvy</Text>
+              <Text style={[styles.logoText, { color: c.textPrimary }]}>Evenvy</Text>
             </View>
             <TouchableOpacity
               testID="home-profile-btn"
@@ -267,7 +267,7 @@ export default function HomeScreen() {
             <Ionicons name="business-outline" size={48} color={c.textTertiary} />
             <Text style={[styles.emptyTitle, { color: c.textSecondary }]}>Încă nu sunt locații publicate</Text>
             <Text style={[styles.emptySubtext, { color: c.textTertiary }]}>
-              Fii primul proprietar care își listează locația pe Venvy!
+              Fii primul proprietar care își listează locația pe Evenvy!
             </Text>
             <TouchableOpacity
               testID="register-owner-cta"
@@ -286,7 +286,7 @@ export default function HomeScreen() {
           </View>
           <Text style={[styles.ownerCtaTitle, { color: c.textPrimary }]}>Ai o locație de evenimente?</Text>
           <Text style={[styles.ownerCtaText, { color: c.textSecondary }]}>
-            Listează-ți spațiul pe Venvy și fii descoperit de mii de clienți.
+            Listează-ți spațiul pe Evenvy și fii descoperit de mii de clienți.
           </Text>
           <TouchableOpacity
             testID="owner-register-cta"
