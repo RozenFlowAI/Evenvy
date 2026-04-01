@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, Image,
-  TextInput, ActivityIndicator, Modal
+  TextInput, ActivityIndicator, Modal, Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, EVENT_TYPE_LABELS, Venue } from '../../src/utils/api';
 import VenueBadges from '../../src/components/VenueBadges';
+
+const { width } = Dimensions.get('window');
 
 const EVENT_TYPES = [
   { id: '', label: 'Toate' },
@@ -24,15 +26,20 @@ const SORT_OPTIONS = [
   { id: 'capacity', label: 'Capacitate' },
 ];
 
+const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&h=300&fit=crop';
+
 export default function SearchScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ event_type?: string }>();
+  const { theme } = useTheme();
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [eventType, setEventType] = useState(params.event_type || '');
   const [sortBy, setSortBy] = useState('recommended');
   const [showFilters, setShowFilters] = useState(false);
+
+  const c = theme.colors;
 
   const fetchVenues = useCallback(async () => {
     setLoading(true);
@@ -56,17 +63,21 @@ export default function SearchScreen() {
   const renderVenue = ({ item }: { item: Venue }) => (
     <TouchableOpacity
       testID={`search-venue-${item.id}`}
-      style={styles.venueCard}
+      style={[styles.venueCard, { backgroundColor: c.surface, borderColor: c.border }]}
       onPress={() => router.push(`/venue/${item.id}`)}
       activeOpacity={0.9}
     >
-      {item.images && item.images[0] ? (
-        <Image source={{ uri: item.images[0] }} style={styles.venueImage} />
-      ) : (
-        <View style={[styles.venueImage, styles.placeholder]}>
-          <Ionicons name="image-outline" size={32} color={colors.textTertiary} />
-        </View>
-      )}
+      <View style={styles.imageContainer}>
+        <Image 
+          source={{ uri: item.images?.[0] || PLACEHOLDER_IMAGE }} 
+          style={styles.venueImage}
+        />
+        {(!item.images || item.images.length === 0) && (
+          <View style={[styles.imagePlaceholder, { backgroundColor: c.surfaceHighlight }]}>
+            <Ionicons name="image-outline" size={32} color={c.textTertiary} />
+          </View>
+        )}
+      </View>
       
       {/* Tags overlay */}
       {item.style_tags && item.style_tags.length > 0 && (
@@ -89,22 +100,22 @@ export default function SearchScreen() {
       )}
       
       <View style={styles.venueInfo}>
-        <Text style={styles.venueName} numberOfLines={1}>{item.name}</Text>
+        <Text style={[styles.venueName, { color: c.textPrimary }]} numberOfLines={1}>{item.name}</Text>
         <View style={styles.locationRow}>
-          <Ionicons name="location-sharp" size={13} color={colors.textSecondary} />
-          <Text style={styles.locationText}>{item.city}</Text>
+          <Ionicons name="location-sharp" size={13} color={c.textSecondary} />
+          <Text style={[styles.locationText, { color: c.textSecondary }]} numberOfLines={1}>{item.city}</Text>
           {item.avg_rating > 0 && (
-            <View style={styles.ratingBadge}>
-              <Ionicons name="star" size={12} color={colors.primary} />
-              <Text style={styles.ratingText}>{item.avg_rating}</Text>
+            <View style={[styles.ratingBadge, { backgroundColor: c.primary + '20' }]}>
+              <Ionicons name="star" size={11} color={c.primary} />
+              <Text style={[styles.ratingText, { color: c.primary }]}>{item.avg_rating}</Text>
             </View>
           )}
         </View>
         <View style={styles.bottomRow}>
-          <Text style={styles.capacityText}>{item.capacity_min}-{item.capacity_max} persoane</Text>
-          <Text style={styles.priceText}>
+          <Text style={[styles.capacityText, { color: c.textTertiary }]}>{item.capacity_min}-{item.capacity_max} pers.</Text>
+          <Text style={[styles.priceText, { color: c.primary }]} numberOfLines={1}>
             {item.price_type === 'fixed' && item.price_per_person
-              ? `de la €${item.price_per_person}/pers.`
+              ? `€${item.price_per_person}/pers.`
               : 'Cere ofertă'}
           </Text>
         </View>
@@ -113,17 +124,17 @@ export default function SearchScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Caută Locații</Text>
+        <Text style={[styles.title, { color: c.textPrimary }]}>Caută Locații</Text>
         <View style={styles.searchRow}>
-          <View style={styles.searchInput}>
-            <Ionicons name="search" size={18} color={colors.textTertiary} />
+          <View style={[styles.searchInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border }]}>
+            <Ionicons name="search" size={18} color={c.textTertiary} />
             <TextInput
               testID="search-input"
-              style={styles.input}
+              style={[styles.input, { color: c.textPrimary }]}
               placeholder="Nume, oraș..."
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={search}
               onChangeText={setSearch}
               onSubmitEditing={fetchVenues}
@@ -131,16 +142,21 @@ export default function SearchScreen() {
             />
             {search ? (
               <TouchableOpacity onPress={() => setSearch('')} testID="clear-search">
-                <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                <Ionicons name="close-circle" size={18} color={c.textTertiary} />
               </TouchableOpacity>
             ) : null}
           </View>
-          <TouchableOpacity testID="filter-btn" style={styles.filterBtn} onPress={() => setShowFilters(true)}>
-            <Ionicons name="options" size={20} color={colors.primary} />
+          <TouchableOpacity 
+            testID="filter-btn" 
+            style={[styles.filterBtn, { backgroundColor: c.surfaceHighlight, borderColor: c.border }]} 
+            onPress={() => setShowFilters(true)}
+          >
+            <Ionicons name="options" size={20} color={c.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Filter chips - FIXED: consistent height, single color */}
       <FlatList
         horizontal
         data={EVENT_TYPES}
@@ -150,10 +166,19 @@ export default function SearchScreen() {
         renderItem={({ item }) => (
           <TouchableOpacity
             testID={`filter-type-${item.id || 'all'}`}
-            style={[styles.chip, eventType === item.id && styles.chipActive]}
+            activeOpacity={0.7}
+            style={[
+              styles.chip, 
+              { backgroundColor: c.surfaceHighlight, borderColor: c.border },
+              eventType === item.id && { backgroundColor: c.primary, borderColor: c.primary }
+            ]}
             onPress={() => setEventType(item.id)}
           >
-            <Text style={[styles.chipText, eventType === item.id && styles.chipTextActive]}>
+            <Text style={[
+              styles.chipText, 
+              { color: c.textSecondary },
+              eventType === item.id && styles.chipTextActive
+            ]}>
               {item.label}
             </Text>
           </TouchableOpacity>
@@ -161,7 +186,9 @@ export default function SearchScreen() {
       />
 
       {loading ? (
-        <ActivityIndicator testID="search-loading" size="large" color={colors.primary} style={{ flex: 1 }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator testID="search-loading" size="large" color={c.primary} />
+        </View>
       ) : (
         <FlatList
           testID="venue-list"
@@ -170,11 +197,18 @@ export default function SearchScreen() {
           renderItem={renderVenue}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="search-outline" size={48} color={colors.textTertiary} />
-              <Text style={styles.emptyText}>Nicio locație găsită</Text>
-              <Text style={styles.emptySubtext}>
-                Proprietarii nu au publicat încă locații{eventType ? ' pentru acest tip de eveniment' : ''}.
+            <View style={styles.emptyContainer}>
+              <View style={[styles.emptyIconWrap, { backgroundColor: c.surfaceHighlight }]}>
+                <Ionicons name="search-outline" size={40} color={c.textTertiary} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: c.textPrimary }]}>Nicio locație găsită</Text>
+              <Text style={[styles.emptySubtext, { color: c.textSecondary }]}>
+                {eventType 
+                  ? `Nu există locații pentru "${EVENT_TYPE_LABELS[eventType] || eventType}".`
+                  : 'Proprietarii nu au publicat încă locații.'}
+              </Text>
+              <Text style={[styles.emptyHint, { color: c.textTertiary }]}>
+                Încearcă să schimbi filtrele sau caută altceva.
               </Text>
             </View>
           }
@@ -184,29 +218,37 @@ export default function SearchScreen() {
       {/* Sort Modal */}
       <Modal visible={showFilters} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Sortare</Text>
+              <Text style={[styles.modalTitle, { color: c.textPrimary }]}>Sortare</Text>
               <TouchableOpacity testID="close-filters" onPress={() => setShowFilters(false)}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={c.textPrimary} />
               </TouchableOpacity>
             </View>
             {SORT_OPTIONS.map((opt) => (
               <TouchableOpacity
                 key={opt.id}
                 testID={`sort-${opt.id}`}
-                style={[styles.sortOption, sortBy === opt.id && styles.sortOptionActive]}
+                style={[
+                  styles.sortOption, 
+                  { borderColor: c.border },
+                  sortBy === opt.id && { backgroundColor: c.surfaceHighlight }
+                ]}
                 onPress={() => setSortBy(opt.id)}
               >
-                <Text style={[styles.sortText, sortBy === opt.id && styles.sortTextActive]}>
+                <Text style={[
+                  styles.sortText, 
+                  { color: c.textSecondary },
+                  sortBy === opt.id && { color: c.primary, fontWeight: '600' }
+                ]}>
                   {opt.label}
                 </Text>
-                {sortBy === opt.id && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+                {sortBy === opt.id && <Ionicons name="checkmark" size={18} color={c.primary} />}
               </TouchableOpacity>
             ))}
             <TouchableOpacity
               testID="apply-filters"
-              style={styles.applyBtn}
+              style={[styles.applyBtn, { backgroundColor: c.primary }]}
               onPress={() => { setShowFilters(false); fetchVenues(); }}
             >
               <Text style={styles.applyBtnText}>Aplică</Text>
@@ -219,62 +261,70 @@ export default function SearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  title: { ...typography.h1, color: colors.textPrimary, marginBottom: spacing.md },
-  searchRow: { flexDirection: 'row', gap: spacing.sm },
+  container: { flex: 1 },
+  
+  // Header
+  header: { paddingHorizontal: 24, paddingTop: 16 },
+  title: { fontSize: 24, fontWeight: '700', marginBottom: 12 },
+  searchRow: { flexDirection: 'row', gap: 10 },
   searchInput: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surfaceHighlight,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
+    gap: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  input: { flex: 1, ...typography.bodyLg, color: colors.textPrimary, paddingVertical: 12 },
+  input: { flex: 1, fontSize: 14, paddingVertical: 12 },
   filterBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surfaceHighlight,
+    width: 46,
+    height: 46,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  chipsRow: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm },
+  
+  // Chips - FIXED: consistent height, no expansion
+  chipsRow: { paddingHorizontal: 24, paddingVertical: 12, gap: 8 },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.full,
-    backgroundColor: colors.surfaceHighlight,
-    borderWidth: 1,
-    borderColor: colors.border,
-    height: 36,
+    paddingVertical: 0,
+    height: 34,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
-  chipTextActive: { color: colors.background, fontWeight: '700' },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
-  venueCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  venueImage: { width: '100%', height: 180 },
-  placeholder: { backgroundColor: colors.surfaceHighlight, alignItems: 'center', justifyContent: 'center' },
+  chipText: { fontSize: 13, fontWeight: '500' },
+  chipTextActive: { color: '#fff', fontWeight: '600' },
+  
+  // Loading
+  loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  
+  // List
+  listContent: { paddingHorizontal: 24, paddingBottom: 24 },
+  
+  // Venue card - FIXED: image placeholder, price truncation
+  venueCard: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+    borderWidth: 1,
+  },
+  imageContainer: { width: '100%', height: 160, position: 'relative' },
+  venueImage: { width: '100%', height: '100%', backgroundColor: '#1a1a1a' },
+  imagePlaceholder: { 
+    position: 'absolute', 
+    top: 0, left: 0, right: 0, bottom: 0, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
   tagsOverlay: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: 10,
+    left: 10,
     flexDirection: 'row',
     gap: 4,
   },
@@ -282,64 +332,75 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  tagText: { ...typography.caption, color: colors.textPrimary, textTransform: 'none', fontSize: 10 },
-  venueBadge: { position: 'absolute', top: spacing.sm, right: spacing.sm },
-  venueInfo: { padding: spacing.md },
-  venueName: { ...typography.h3, color: colors.textPrimary, marginBottom: 4 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.sm },
-  locationText: { ...typography.bodySm, color: colors.textSecondary },
+  tagText: { color: '#fff', fontSize: 10, fontWeight: '600' },
+  venueBadge: { position: 'absolute', top: 10, right: 10 },
+  venueInfo: { padding: 12 },
+  venueName: { fontSize: 16, fontWeight: '600' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  locationText: { fontSize: 13, fontWeight: '400', flex: 1 },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    marginLeft: 'auto',
-    backgroundColor: colors.primary + '20',
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  ratingText: { ...typography.bodySm, color: colors.primary, fontWeight: '700' },
-  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  capacityText: { ...typography.bodySm, color: colors.textTertiary },
-  priceText: { ...typography.bodyLg, color: colors.primary, fontWeight: '700' },
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm, paddingHorizontal: spacing.lg },
-  emptyText: { ...typography.h3, color: colors.textSecondary },
-  emptySubtext: { ...typography.bodySm, color: colors.textTertiary, textAlign: 'center' },
+  ratingText: { fontSize: 12, fontWeight: '700' },
+  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  capacityText: { fontSize: 13, fontWeight: '400' },
+  priceText: { fontSize: 15, fontWeight: '700' },
+  
+  // Empty state - FIXED: no empty space
+  emptyContainer: { 
+    alignItems: 'center', 
+    paddingTop: 60, 
+    paddingHorizontal: 32 
+  },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontSize: 18, fontWeight: '600', textAlign: 'center' },
+  emptySubtext: { fontSize: 14, fontWeight: '400', textAlign: 'center', marginTop: 8 },
+  emptyHint: { fontSize: 13, fontWeight: '400', textAlign: 'center', marginTop: 8 },
+  
+  // Modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 40,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: 20,
   },
-  modalTitle: { ...typography.h2, color: colors.textPrimary },
+  modalTitle: { fontSize: 20, fontWeight: '600' },
   sortOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    marginBottom: spacing.xs,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 6,
   },
-  sortOptionActive: { backgroundColor: colors.surfaceHighlight },
-  sortText: { ...typography.bodyLg, color: colors.textSecondary },
-  sortTextActive: { color: colors.primary, fontWeight: '600' },
+  sortText: { fontSize: 15, fontWeight: '400' },
   applyBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: 16,
-    borderRadius: radius.full,
+    paddingVertical: 14,
+    borderRadius: 999,
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: 16,
   },
-  applyBtnText: { ...typography.bodyLg, color: colors.background, fontWeight: '700' },
+  applyBtnText: { fontSize: 15, color: '#fff', fontWeight: '600' },
 });
