@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, authHeaders, Quote, Venue, LOYALTY_TIERS } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';
 import LoyaltyBadge from '../../src/components/LoyaltyBadge';
@@ -19,18 +19,6 @@ type Stats = {
   total_views: number;
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: colors.warning,
-  responded: colors.success,
-  rejected: colors.error,
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'În așteptare',
-  responded: 'Răspuns',
-  rejected: 'Refuzat',
-};
-
 const PROMOTION_PACKAGES = [
   { id: 'bronze', name: 'Pachet Bronze', days: 7, price: 49, desc: 'Poziție îmbunătățită în rezultate', badge: null },
   { id: 'silver', name: 'Pachet Silver', days: 14, price: 89, desc: 'Top în căutări + badge "Promovat"', badge: 'Promovat' },
@@ -40,6 +28,21 @@ const PROMOTION_PACKAGES = [
 export default function OwnerDashboard() {
   const router = useRouter();
   const { token, user } = useAuth();
+  const { theme } = useTheme();
+  const c = theme.colors;
+  
+  const STATUS_COLORS: Record<string, string> = {
+    pending: c.warning,
+    responded: c.success,
+    rejected: c.error,
+  };
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: 'În așteptare',
+    responded: 'Răspuns',
+    rejected: 'Refuzat',
+  };
+  
   const [stats, setStats] = useState<Stats | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
@@ -105,74 +108,74 @@ export default function OwnerDashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <ActivityIndicator testID="owner-loading" size="large" color={colors.primary} style={{ flex: 1 }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
+        <ActivityIndicator testID="owner-loading" size="large" color={c.primary} style={{ flex: 1 }} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => { setRefreshing(true); loadData(); }}
-            tintColor={colors.primary}
+            tintColor={c.primary}
           />
         }
       >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity testID="owner-back-btn" onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="arrow-back" size={24} color={c.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Dashboard</Text>
+          <Text style={[styles.title, { color: c.textPrimary }]}>Dashboard</Text>
           <TouchableOpacity testID="add-venue-btn-dashboard" onPress={() => router.push('/owner/add-venue')}>
-            <Ionicons name="add-circle" size={28} color={colors.primary} />
+            <Ionicons name="add-circle" size={28} color={c.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Stats */}
         {stats && (
           <View style={styles.statsGrid}>
-            <View style={[styles.statCard, { backgroundColor: colors.primary + '15' }]}>
-              <Text style={styles.statNumber}>{stats.total_venues}</Text>
-              <Text style={styles.statLabel}>Locații</Text>
+            <View style={[styles.statCard, { backgroundColor: c.primary + '15' }]}>
+              <Text style={[styles.statNumber, { color: c.textPrimary }]}>{stats.total_venues}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>Locații</Text>
             </View>
-            <View style={[styles.statCard, { backgroundColor: colors.info + '15' }]}>
-              <Text style={styles.statNumber}>{stats.total_quotes}</Text>
-              <Text style={styles.statLabel}>Cereri totale</Text>
+            <View style={[styles.statCard, { backgroundColor: c.info + '15' }]}>
+              <Text style={[styles.statNumber, { color: c.textPrimary }]}>{stats.total_quotes}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>Cereri totale</Text>
             </View>
-            <View style={[styles.statCard, { backgroundColor: colors.warning + '15' }]}>
-              <Text style={styles.statNumber}>{stats.pending_quotes}</Text>
-              <Text style={styles.statLabel}>În așteptare</Text>
+            <View style={[styles.statCard, { backgroundColor: c.warning + '15' }]}>
+              <Text style={[styles.statNumber, { color: c.textPrimary }]}>{stats.pending_quotes}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>În așteptare</Text>
             </View>
-            <View style={[styles.statCard, { backgroundColor: colors.success + '15' }]}>
-              <Text style={styles.statNumber}>{stats.total_views}</Text>
-              <Text style={styles.statLabel}>Vizualizări</Text>
+            <View style={[styles.statCard, { backgroundColor: c.success + '15' }]}>
+              <Text style={[styles.statNumber, { color: c.textPrimary }]}>{stats.total_views}</Text>
+              <Text style={[styles.statLabel, { color: c.textSecondary }]}>Vizualizări</Text>
             </View>
           </View>
         )}
 
         {/* Tab Switcher */}
-        <View style={styles.tabRow}>
+        <View style={[styles.tabRow, { backgroundColor: c.surface }]}>
           <TouchableOpacity
             testID="tab-quotes"
-            style={[styles.tab, activeTab === 'quotes' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'quotes' && { backgroundColor: c.primary }]}
             onPress={() => setActiveTab('quotes')}
           >
-            <Text style={[styles.tabText, activeTab === 'quotes' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { color: c.textSecondary }, activeTab === 'quotes' && { color: c.background, fontWeight: '700' }]}>
               Cereri de ofertă
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             testID="tab-venues"
-            style={[styles.tab, activeTab === 'venues' && styles.tabActive]}
+            style={[styles.tab, activeTab === 'venues' && { backgroundColor: c.primary }]}
             onPress={() => setActiveTab('venues')}
           >
-            <Text style={[styles.tabText, activeTab === 'venues' && styles.tabTextActive]}>
+            <Text style={[styles.tabText, { color: c.textSecondary }, activeTab === 'venues' && { color: c.background, fontWeight: '700' }]}>
               Locațiile mele
             </Text>
           </TouchableOpacity>
@@ -183,20 +186,20 @@ export default function OwnerDashboard() {
           <View style={styles.listSection}>
             {quotes.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="chatbubble-ellipses-outline" size={48} color={colors.textTertiary} />
-                <Text style={styles.emptyText}>Nicio cerere de ofertă</Text>
-                <Text style={styles.emptySubtext}>Cererile clienților vor apărea aici</Text>
+                <Ionicons name="chatbubble-ellipses-outline" size={48} color={c.textTertiary} />
+                <Text style={[styles.emptyText, { color: c.textSecondary }]}>Nicio cerere de ofertă</Text>
+                <Text style={[styles.emptySubtext, { color: c.textTertiary }]}>Cererile clienților vor apărea aici</Text>
               </View>
             ) : (
               quotes.map((quote) => (
-                <View key={quote.id} style={styles.quoteCard} testID={`owner-quote-${quote.id}`}>
+                <View key={quote.id} style={[styles.quoteCard, { backgroundColor: c.surface, borderColor: c.border }]} testID={`owner-quote-${quote.id}`}>
                   <View style={styles.quoteHeader}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.quoterName}>{quote.client_name}</Text>
+                      <Text style={[styles.quoterName, { color: c.textPrimary }]}>{quote.client_name}</Text>
                       <View style={styles.loyaltyRow}>
                         <LoyaltyBadge tierId={quote.client_loyalty_tier} size="small" />
                         {quote.client_discount > 0 && (
-                          <Text style={styles.discountText}>-{quote.client_discount}%</Text>
+                          <Text style={[styles.discountText, { color: c.success }]}>-{quote.client_discount}%</Text>
                         )}
                       </View>
                     </View>
@@ -207,55 +210,55 @@ export default function OwnerDashboard() {
                     </View>
                   </View>
                   
-                  <Text style={styles.quoteVenue}>{quote.venue_name}</Text>
+                  <Text style={[styles.quoteVenue, { color: c.primary }]}>{quote.venue_name}</Text>
                   
                   <View style={styles.quoteDetails}>
                     <View style={styles.detailItem}>
-                      <Ionicons name="calendar" size={14} color={colors.textTertiary} />
-                      <Text style={styles.detailText}>{quote.event_date}</Text>
+                      <Ionicons name="calendar" size={14} color={c.textTertiary} />
+                      <Text style={[styles.detailText, { color: c.textTertiary }]}>{quote.event_date}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                      <Ionicons name="people" size={14} color={colors.textTertiary} />
-                      <Text style={styles.detailText}>{quote.guest_count} invitați</Text>
+                      <Ionicons name="people" size={14} color={c.textTertiary} />
+                      <Text style={[styles.detailText, { color: c.textTertiary }]}>{quote.guest_count} invitați</Text>
                     </View>
                     <View style={styles.detailItem}>
-                      <Ionicons name="pricetag" size={14} color={colors.textTertiary} />
-                      <Text style={styles.detailText}>{quote.event_type}</Text>
+                      <Ionicons name="pricetag" size={14} color={c.textTertiary} />
+                      <Text style={[styles.detailText, { color: c.textTertiary }]}>{quote.event_type}</Text>
                     </View>
                   </View>
                   
                   <View style={styles.contactInfo}>
-                    <Ionicons name="mail" size={14} color={colors.primary} />
-                    <Text style={styles.contactText}>{quote.client_email}</Text>
+                    <Ionicons name="mail" size={14} color={c.primary} />
+                    <Text style={[styles.contactText, { color: c.textSecondary }]}>{quote.client_email}</Text>
                     {quote.client_phone && (
                       <>
-                        <Ionicons name="call" size={14} color={colors.primary} style={{ marginLeft: spacing.md }} />
-                        <Text style={styles.contactText}>{quote.client_phone}</Text>
+                        <Ionicons name="call" size={14} color={c.primary} style={{ marginLeft: 16 }} />
+                        <Text style={[styles.contactText, { color: c.textSecondary }]}>{quote.client_phone}</Text>
                       </>
                     )}
                   </View>
                   
                   {quote.message ? (
-                    <Text style={styles.quoteMessage}>"{quote.message}"</Text>
+                    <Text style={[styles.quoteMessage, { color: c.textSecondary }]}>"{quote.message}"</Text>
                   ) : null}
                   
                   {quote.status === 'pending' && (
                     <View style={styles.actionRow}>
                       <TouchableOpacity
                         testID={`respond-quote-${quote.id}`}
-                        style={styles.respondBtn}
+                        style={[styles.respondBtn, { backgroundColor: c.success }]}
                         onPress={() => updateQuoteStatus(quote.id, 'responded')}
                       >
-                        <Ionicons name="checkmark" size={16} color={colors.background} />
-                        <Text style={styles.respondBtnText}>Am răspuns</Text>
+                        <Ionicons name="checkmark" size={16} color={c.background} />
+                        <Text style={[styles.respondBtnText, { color: c.background }]}>Am răspuns</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         testID={`reject-quote-${quote.id}`}
-                        style={styles.rejectBtn}
+                        style={[styles.rejectBtn, { borderColor: c.error }]}
                         onPress={() => updateQuoteStatus(quote.id, 'rejected')}
                       >
-                        <Ionicons name="close" size={16} color={colors.error} />
-                        <Text style={styles.rejectBtnText}>Refuză</Text>
+                        <Ionicons name="close" size={16} color={c.error} />
+                        <Text style={[styles.rejectBtnText, { color: c.error }]}>Refuză</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -267,47 +270,47 @@ export default function OwnerDashboard() {
           <View style={styles.listSection}>
             {venues.length === 0 ? (
               <View style={styles.empty}>
-                <Ionicons name="business-outline" size={48} color={colors.textTertiary} />
-                <Text style={styles.emptyText}>Nicio locație adăugată</Text>
+                <Ionicons name="business-outline" size={48} color={c.textTertiary} />
+                <Text style={[styles.emptyText, { color: c.textSecondary }]}>Nicio locație adăugată</Text>
                 <TouchableOpacity
-                  style={styles.addVenueBtn}
+                  style={[styles.addVenueBtn, { backgroundColor: c.primary }]}
                   onPress={() => router.push('/owner/add-venue')}
                 >
-                  <Text style={styles.addVenueBtnText}>Adaugă prima ta locație</Text>
+                  <Text style={[styles.addVenueBtnText, { color: c.background }]}>Adaugă prima ta locație</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               venues.map((venue) => (
-                <View key={venue.id} style={styles.venueCard} testID={`owner-venue-${venue.id}`}>
+                <View key={venue.id} style={[styles.venueCard, { backgroundColor: c.surface, borderColor: c.border }]} testID={`owner-venue-${venue.id}`}>
                   <TouchableOpacity
                     style={styles.venueMain}
                     onPress={() => router.push(`/venue/${venue.id}`)}
                   >
-                    <Text style={styles.venueCardName}>{venue.name}</Text>
-                    <Text style={styles.venueCardCity}>{venue.city}</Text>
+                    <Text style={[styles.venueCardName, { color: c.textPrimary }]}>{venue.name}</Text>
+                    <Text style={[styles.venueCardCity, { color: c.textSecondary }]}>{venue.city}</Text>
                     <View style={styles.venueStats}>
                       <View style={styles.venueStat}>
-                        <Ionicons name="star" size={12} color={colors.primary} />
-                        <Text style={styles.venueStatText}>{venue.avg_rating || '—'}</Text>
+                        <Ionicons name="star" size={12} color={c.primary} />
+                        <Text style={[styles.venueStatText, { color: c.textTertiary }]}>{venue.avg_rating || '—'}</Text>
                       </View>
                       <View style={styles.venueStat}>
-                        <Ionicons name="chatbubble" size={12} color={colors.textTertiary} />
-                        <Text style={styles.venueStatText}>{venue.quote_count} cereri</Text>
+                        <Ionicons name="chatbubble" size={12} color={c.textTertiary} />
+                        <Text style={[styles.venueStatText, { color: c.textTertiary }]}>{venue.quote_count} cereri</Text>
                       </View>
                     </View>
                     {venue.active_promotion && (
-                      <View style={styles.activePromo}>
-                        <Ionicons name="flash" size={12} color={colors.warning} />
-                        <Text style={styles.activePromoText}>{venue.active_promotion.name} activ</Text>
+                      <View style={[styles.activePromo, { backgroundColor: c.warning + '20' }]}>
+                        <Ionicons name="flash" size={12} color={c.warning} />
+                        <Text style={[styles.activePromoText, { color: c.warning }]}>{venue.active_promotion.name} activ</Text>
                       </View>
                     )}
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.promoteBtn}
+                    style={[styles.promoteBtn, { backgroundColor: c.primary + '15' }]}
                     onPress={() => setPromoteModal({ visible: true, venueId: venue.id })}
                   >
-                    <Ionicons name="rocket" size={18} color={colors.primary} />
-                    <Text style={styles.promoteBtnText}>Promovează</Text>
+                    <Ionicons name="rocket" size={18} color={c.primary} />
+                    <Text style={[styles.promoteBtnText, { color: c.primary }]}>Promovează</Text>
                   </TouchableOpacity>
                 </View>
               ))
@@ -321,37 +324,37 @@ export default function OwnerDashboard() {
       {/* Promotion Modal */}
       <Modal visible={promoteModal.visible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Pachete de promovare</Text>
+              <Text style={[styles.modalTitle, { color: c.textPrimary }]}>Pachete de promovare</Text>
               <TouchableOpacity onPress={() => setPromoteModal({ visible: false, venueId: null })}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={c.textPrimary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.modalDesc}>
+            <Text style={[styles.modalDesc, { color: c.textSecondary }]}>
               Crește vizibilitatea locației tale și primește mai multe cereri de ofertă.
             </Text>
             {PROMOTION_PACKAGES.map((pkg) => (
               <TouchableOpacity
                 key={pkg.id}
-                style={styles.packageCard}
+                style={[styles.packageCard, { backgroundColor: c.surfaceHighlight, borderColor: c.border }]}
                 onPress={() => purchasePromotion(pkg.id)}
                 disabled={promoting}
               >
                 <View style={{ flex: 1 }}>
                   <View style={styles.packageHeader}>
-                    <Text style={styles.packageName}>{pkg.name}</Text>
+                    <Text style={[styles.packageName, { color: c.textPrimary }]}>{pkg.name}</Text>
                     {pkg.badge && (
-                      <View style={[styles.packageBadge, { backgroundColor: pkg.id === 'gold' ? colors.error : colors.warning }]}>
+                      <View style={[styles.packageBadge, { backgroundColor: pkg.id === 'gold' ? c.error : c.warning }]}>
                         <Text style={styles.packageBadgeText}>{pkg.badge}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={styles.packageDesc}>{pkg.desc}</Text>
-                  <Text style={styles.packageDays}>{pkg.days} zile</Text>
+                  <Text style={[styles.packageDesc, { color: c.textSecondary }]}>{pkg.desc}</Text>
+                  <Text style={[styles.packageDays, { color: c.textTertiary }]}>{pkg.days} zile</Text>
                 </View>
                 <View style={styles.packagePrice}>
-                  <Text style={styles.priceValue}>€{pkg.price}</Text>
+                  <Text style={[styles.priceValue, { color: c.primary }]}>€{pkg.price}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -363,89 +366,82 @@ export default function OwnerDashboard() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  title: { ...typography.h1, color: colors.textPrimary },
+  title: { fontSize: 26, fontWeight: '700' },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    paddingHorizontal: 24,
+    gap: 8,
+    marginTop: 16,
   },
   statCard: {
     width: '48%',
     flexGrow: 1,
-    padding: spacing.md,
-    borderRadius: radius.lg,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  statNumber: { ...typography.h1, color: colors.textPrimary },
-  statLabel: { ...typography.bodySm, color: colors.textSecondary, marginTop: 2 },
+  statNumber: { fontSize: 26, fontWeight: '700' },
+  statLabel: { fontSize: 14, marginTop: 2 },
   tabRow: {
     flexDirection: 'row',
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    marginHorizontal: 24,
+    marginTop: 24,
+    borderRadius: 12,
     padding: 4,
   },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center' },
-  tabActive: { backgroundColor: colors.primary },
-  tabText: { ...typography.bodySm, color: colors.textSecondary, fontWeight: '600' },
-  tabTextActive: { color: colors.background, fontWeight: '700' },
-  listSection: { paddingHorizontal: spacing.lg, marginTop: spacing.md },
-  empty: { alignItems: 'center', paddingTop: 40, gap: spacing.sm },
-  emptyText: { ...typography.h3, color: colors.textSecondary },
-  emptySubtext: { ...typography.bodySm, color: colors.textTertiary },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  tabText: { fontSize: 14, fontWeight: '600' },
+  listSection: { paddingHorizontal: 24, marginTop: 16 },
+  empty: { alignItems: 'center', paddingTop: 40, gap: 8 },
+  emptyText: { fontSize: 18, fontWeight: '600' },
+  emptySubtext: { fontSize: 14 },
   addVenueBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 32,
     paddingVertical: 12,
-    borderRadius: radius.full,
-    marginTop: spacing.md,
+    borderRadius: 999,
+    marginTop: 16,
   },
-  addVenueBtnText: { ...typography.bodySm, color: colors.background, fontWeight: '700' },
+  addVenueBtnText: { fontSize: 14, fontWeight: '700' },
   quoteCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   quoteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  quoterName: { ...typography.bodyLg, color: colors.textPrimary, fontWeight: '700' },
-  loyaltyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 4 },
-  discountText: { ...typography.caption, color: colors.success, fontWeight: '700' },
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
-  statusText: { ...typography.caption, textTransform: 'capitalize' },
-  quoteVenue: { ...typography.bodySm, color: colors.primary, fontWeight: '600', marginTop: spacing.sm },
-  quoteDetails: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.sm },
+  quoterName: { fontSize: 16, fontWeight: '700' },
+  loyaltyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  discountText: { fontSize: 12, fontWeight: '700' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
+  statusText: { fontSize: 12, textTransform: 'capitalize' },
+  quoteVenue: { fontSize: 14, fontWeight: '600', marginTop: 8 },
+  quoteDetails: { flexDirection: 'row', flexWrap: 'wrap', gap: 16, marginTop: 8 },
   detailItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  detailText: { ...typography.bodySm, color: colors.textTertiary },
-  contactInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm, flexWrap: 'wrap' },
-  contactText: { ...typography.bodySm, color: colors.textSecondary },
-  quoteMessage: { ...typography.bodySm, color: colors.textSecondary, fontStyle: 'italic', marginTop: spacing.sm },
-  actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  detailText: { fontSize: 14 },
+  contactInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, flexWrap: 'wrap' },
+  contactText: { fontSize: 14 },
+  quoteMessage: { fontSize: 14, fontStyle: 'italic', marginTop: 8 },
+  actionRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   respondBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    backgroundColor: colors.success,
     paddingVertical: 10,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  respondBtnText: { ...typography.bodySm, color: colors.background, fontWeight: '700' },
+  respondBtnText: { fontSize: 14, fontWeight: '700' },
   rejectBtn: {
     flex: 1,
     flexDirection: 'row',
@@ -453,81 +449,73 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
     borderWidth: 1,
-    borderColor: colors.error,
     paddingVertical: 10,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  rejectBtnText: { ...typography.bodySm, color: colors.error, fontWeight: '600' },
+  rejectBtnText: { fontSize: 14, fontWeight: '600' },
   venueCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   venueMain: { flex: 1 },
-  venueCardName: { ...typography.bodyLg, color: colors.textPrimary, fontWeight: '600' },
-  venueCardCity: { ...typography.bodySm, color: colors.textSecondary, marginTop: 2 },
-  venueStats: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs },
+  venueCardName: { fontSize: 16, fontWeight: '600' },
+  venueCardCity: { fontSize: 14, marginTop: 2 },
+  venueStats: { flexDirection: 'row', gap: 16, marginTop: 4 },
   venueStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  venueStatText: { ...typography.bodySm, color: colors.textTertiary },
+  venueStatText: { fontSize: 14 },
   activePromo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: spacing.xs,
-    backgroundColor: colors.warning + '20',
+    marginTop: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: radius.full,
+    borderRadius: 999,
     alignSelf: 'flex-start',
   },
-  activePromoText: { ...typography.caption, color: colors.warning, textTransform: 'none' },
+  activePromoText: { fontSize: 12 },
   promoteBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primary + '15',
-    borderRadius: radius.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
-  promoteBtnText: { ...typography.caption, color: colors.primary, textTransform: 'none' },
+  promoteBtnText: { fontSize: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   modalContent: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 24,
+    paddingBottom: 48,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
-  modalTitle: { ...typography.h2, color: colors.textPrimary },
-  modalDesc: { ...typography.bodySm, color: colors.textSecondary, marginBottom: spacing.lg },
+  modalTitle: { fontSize: 22, fontWeight: '600' },
+  modalDesc: { fontSize: 14, marginBottom: 24 },
   packageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  packageHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  packageName: { ...typography.bodyLg, color: colors.textPrimary, fontWeight: '700' },
-  packageBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
-  packageBadgeText: { ...typography.caption, color: '#fff', textTransform: 'none', fontSize: 10 },
-  packageDesc: { ...typography.bodySm, color: colors.textSecondary, marginTop: 4 },
-  packageDays: { ...typography.caption, color: colors.textTertiary, marginTop: 4, textTransform: 'none' },
+  packageHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  packageName: { fontSize: 16, fontWeight: '700' },
+  packageBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
+  packageBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  packageDesc: { fontSize: 14, marginTop: 4 },
+  packageDays: { fontSize: 12, marginTop: 4 },
   packagePrice: { alignItems: 'center' },
-  priceValue: { ...typography.h2, color: colors.primary },
+  priceValue: { fontSize: 22, fontWeight: '600' },
 });

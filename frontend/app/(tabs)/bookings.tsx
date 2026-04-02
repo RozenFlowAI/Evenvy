@@ -6,22 +6,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, authHeaders, Quote, EVENT_TYPE_LABELS } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';
-
-const STATUS_CONFIG: Record<string, { color: string; label: string; icon: string }> = {
-  pending: { color: colors.warning, label: 'În așteptare', icon: 'time' },
-  responded: { color: colors.success, label: 'Răspuns primit', icon: 'checkmark-circle' },
-  rejected: { color: colors.error, label: 'Refuzat', icon: 'close-circle' },
-};
 
 export default function MyQuotesScreen() {
   const router = useRouter();
   const { token, user } = useAuth();
+  const { theme } = useTheme();
+  const c = theme.colors;
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const STATUS_CONFIG: Record<string, { color: string; label: string; icon: string }> = {
+    pending: { color: c.warning, label: 'În așteptare', icon: 'time' },
+    responded: { color: c.success, label: 'Răspuns primit', icon: 'checkmark-circle' },
+    rejected: { color: c.error, label: 'Refuzat', icon: 'close-circle' },
+  };
 
   const loadQuotes = useCallback(async () => {
     if (!token) {
@@ -43,16 +45,16 @@ export default function MyQuotesScreen() {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
         <View style={styles.header}>
-          <Text style={styles.title}>Cererile Mele</Text>
+          <Text style={[styles.title, { color: c.textPrimary }]}>Cererile Mele</Text>
         </View>
         <View style={styles.authPrompt}>
-          <Ionicons name="chatbubble-ellipses-outline" size={64} color={colors.textTertiary} />
-          <Text style={styles.authTitle}>Autentifică-te</Text>
-          <Text style={styles.authText}>Pentru a vedea cererile tale de ofertă</Text>
-          <TouchableOpacity style={styles.authBtn} onPress={() => router.push('/auth')}>
-            <Text style={styles.authBtnText}>Conectează-te</Text>
+          <Ionicons name="chatbubble-ellipses-outline" size={64} color={c.textTertiary} />
+          <Text style={[styles.authTitle, { color: c.textPrimary }]}>Autentifică-te</Text>
+          <Text style={[styles.authText, { color: c.textSecondary }]}>Pentru a vedea cererile tale de ofertă</Text>
+          <TouchableOpacity style={[styles.authBtn, { backgroundColor: c.primary }]} onPress={() => router.push('/auth')}>
+            <Text style={[styles.authBtnText, { color: c.background }]}>Conectează-te</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -64,7 +66,7 @@ export default function MyQuotesScreen() {
     
     return (
       <TouchableOpacity
-        style={styles.quoteCard}
+        style={[styles.quoteCard, { backgroundColor: c.surface, borderColor: c.border }]}
         testID={`my-quote-${item.id}`}
         onPress={() => router.push(`/venue/${item.venue_id}`)}
         activeOpacity={0.9}
@@ -73,8 +75,8 @@ export default function MyQuotesScreen() {
         {item.venue_image ? (
           <Image source={{ uri: item.venue_image }} style={styles.venueImage} />
         ) : (
-          <View style={[styles.venueImage, styles.placeholderImage]}>
-            <Ionicons name="business" size={24} color={colors.textTertiary} />
+          <View style={[styles.venueImage, styles.placeholderImage, { backgroundColor: c.surfaceHighlight }]}>
+            <Ionicons name="business" size={24} color={c.textTertiary} />
           </View>
         )}
         
@@ -85,36 +87,36 @@ export default function MyQuotesScreen() {
         </View>
         
         <View style={styles.quoteInfo}>
-          <Text style={styles.venueName} numberOfLines={1}>{item.venue_name}</Text>
+          <Text style={[styles.venueName, { color: c.textPrimary }]} numberOfLines={1}>{item.venue_name}</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={12} color={colors.textTertiary} />
-            <Text style={styles.locationText}>{item.venue_city}</Text>
+            <Ionicons name="location" size={12} color={c.textTertiary} />
+            <Text style={[styles.locationText, { color: c.textTertiary }]}>{item.venue_city}</Text>
           </View>
           
-          <View style={styles.detailsRow}>
+          <View style={[styles.detailsRow, { borderTopColor: c.border }]}>
             <View style={styles.detailItem}>
-              <Ionicons name="calendar" size={14} color={colors.primary} />
-              <Text style={styles.detailText}>{item.event_date}</Text>
+              <Ionicons name="calendar" size={14} color={c.primary} />
+              <Text style={[styles.detailText, { color: c.textSecondary }]}>{item.event_date}</Text>
             </View>
             <View style={styles.detailItem}>
-              <Ionicons name="people" size={14} color={colors.primary} />
-              <Text style={styles.detailText}>{item.guest_count} invitați</Text>
+              <Ionicons name="people" size={14} color={c.primary} />
+              <Text style={[styles.detailText, { color: c.textSecondary }]}>{item.guest_count} invitați</Text>
             </View>
           </View>
           
           <View style={styles.eventTypeRow}>
-            <View style={styles.eventTypeBadge}>
-              <Text style={styles.eventTypeText}>
+            <View style={[styles.eventTypeBadge, { backgroundColor: c.primary + '20' }]}>
+              <Text style={[styles.eventTypeText, { color: c.primary }]}>
                 {EVENT_TYPE_LABELS[item.event_type] || item.event_type}
               </Text>
             </View>
           </View>
           
           {item.message && (
-            <Text style={styles.message} numberOfLines={2}>"{item.message}"</Text>
+            <Text style={[styles.message, { color: c.textSecondary }]} numberOfLines={2}>"{item.message}"</Text>
           )}
           
-          <Text style={styles.dateCreated}>
+          <Text style={[styles.dateCreated, { color: c.textTertiary }]}>
             Trimis: {new Date(item.created_at).toLocaleDateString('ro-RO')}
           </Text>
         </View>
@@ -123,13 +125,13 @@ export default function MyQuotesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cererile Mele</Text>
+        <Text style={[styles.title, { color: c.textPrimary }]}>Cererile Mele</Text>
       </View>
 
       {loading ? (
-        <ActivityIndicator testID="quotes-loading" size="large" color={colors.primary} style={{ flex: 1 }} />
+        <ActivityIndicator testID="quotes-loading" size="large" color={c.primary} style={{ flex: 1 }} />
       ) : (
         <FlatList
           testID="quotes-list"
@@ -141,22 +143,22 @@ export default function MyQuotesScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={() => { setRefreshing(true); loadQuotes(); }}
-              tintColor={colors.primary}
+              tintColor={c.primary}
             />
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="chatbubble-ellipses-outline" size={64} color={colors.textTertiary} />
-              <Text style={styles.emptyTitle}>Nicio cerere de ofertă</Text>
-              <Text style={styles.emptyText}>
+              <Ionicons name="chatbubble-ellipses-outline" size={64} color={c.textTertiary} />
+              <Text style={[styles.emptyTitle, { color: c.textSecondary }]}>Nicio cerere de ofertă</Text>
+              <Text style={[styles.emptyText, { color: c.textTertiary }]}>
                 Găsește locația perfectă și cere o ofertă personalizată de preț.
               </Text>
               <TouchableOpacity
-                style={styles.searchBtn}
+                style={[styles.searchBtn, { backgroundColor: c.primary }]}
                 onPress={() => router.push('/(tabs)/search')}
               >
-                <Ionicons name="search" size={18} color={colors.background} />
-                <Text style={styles.searchBtnText}>Caută locații</Text>
+                <Ionicons name="search" size={18} color={c.background} />
+                <Text style={[styles.searchBtnText, { color: c.background }]}>Caută locații</Text>
               </TouchableOpacity>
             </View>
           }
@@ -167,112 +169,103 @@ export default function MyQuotesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   header: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  title: { ...typography.h1, color: colors.textPrimary },
+  title: { fontSize: 26, fontWeight: '700' },
   // Auth prompt
   authPrompt: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
-    gap: spacing.sm,
+    padding: 32,
+    gap: 8,
   },
-  authTitle: { ...typography.h2, color: colors.textPrimary },
-  authText: { ...typography.bodyLg, color: colors.textSecondary, textAlign: 'center' },
+  authTitle: { fontSize: 22, fontWeight: '600' },
+  authText: { fontSize: 16, textAlign: 'center' },
   authBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: radius.full,
-    marginTop: spacing.md,
+    borderRadius: 999,
+    marginTop: 16,
   },
-  authBtnText: { ...typography.bodyLg, color: colors.background, fontWeight: '700' },
+  authBtnText: { fontSize: 16, fontWeight: '700' },
   // List
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl },
+  listContent: { paddingHorizontal: 24, paddingBottom: 48 },
   quoteCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   venueImage: { width: '100%', height: 140 },
   placeholderImage: {
-    backgroundColor: colors.surfaceHighlight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   statusBadge: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
+    top: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  statusText: { ...typography.caption, textTransform: 'capitalize', fontSize: 11 },
-  quoteInfo: { padding: spacing.md },
-  venueName: { ...typography.h3, color: colors.textPrimary },
+  statusText: { fontSize: 11, fontWeight: '500', textTransform: 'capitalize' },
+  quoteInfo: { padding: 16 },
+  venueName: { fontSize: 18, fontWeight: '600' },
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-  locationText: { ...typography.bodySm, color: colors.textTertiary },
+  locationText: { fontSize: 14 },
   detailsRow: {
     flexDirection: 'row',
-    gap: spacing.lg,
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+    gap: 24,
+    marginTop: 8,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
   },
   detailItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  detailText: { ...typography.bodySm, color: colors.textSecondary },
-  eventTypeRow: { marginTop: spacing.sm },
+  detailText: { fontSize: 14 },
+  eventTypeRow: { marginTop: 8 },
   eventTypeBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.primary + '20',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: radius.full,
+    borderRadius: 999,
   },
-  eventTypeText: { ...typography.caption, color: colors.primary, textTransform: 'none' },
+  eventTypeText: { fontSize: 12, fontWeight: '500' },
   message: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
+    fontSize: 14,
     fontStyle: 'italic',
-    marginTop: spacing.sm,
+    marginTop: 8,
   },
   dateCreated: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: spacing.sm,
-    textTransform: 'none',
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 8,
   },
   // Empty state
   empty: {
     alignItems: 'center',
     paddingTop: 60,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    paddingHorizontal: 24,
+    gap: 8,
   },
-  emptyTitle: { ...typography.h3, color: colors.textSecondary },
-  emptyText: { ...typography.bodyLg, color: colors.textTertiary, textAlign: 'center' },
+  emptyTitle: { fontSize: 18, fontWeight: '600' },
+  emptyText: { fontSize: 16, textAlign: 'center' },
   searchBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingHorizontal: spacing.xl,
+    gap: 8,
+    paddingHorizontal: 32,
     paddingVertical: 14,
-    borderRadius: radius.full,
-    marginTop: spacing.md,
+    borderRadius: 999,
+    marginTop: 16,
   },
-  searchBtnText: { ...typography.bodyLg, color: colors.background, fontWeight: '700' },
+  searchBtnText: { fontSize: 16, fontWeight: '700' },
 });

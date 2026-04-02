@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
   KeyboardAvoidingView, Platform, Alert, ActivityIndicator
@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { colors, spacing, radius, typography } from '../../src/constants/theme';
+import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, authHeaders } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';
 
@@ -39,6 +39,8 @@ const COMMISSION_TIERS = [
 export default function AddVenueScreen() {
   const router = useRouter();
   const { token } = useAuth();
+  const { theme } = useTheme();
+  const c = theme.colors;
   const [submitting, setSubmitting] = useState(false);
   const [gettingLocation, setGettingLocation] = useState(false);
   
@@ -151,40 +153,40 @@ export default function AddVenueScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity testID="add-venue-close-btn" style={styles.closeBtn} onPress={() => router.back()}>
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            <TouchableOpacity testID="add-venue-close-btn" style={[styles.closeBtn, { backgroundColor: c.surfaceHighlight }]} onPress={() => router.back()}>
+              <Ionicons name="close" size={24} color={c.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.title}>Adaugă Locație</Text>
+            <Text style={[styles.title, { color: c.textPrimary }]}>Adaugă Locație</Text>
             <View style={{ width: 40 }} />
           </View>
 
           {/* Basic Info Section */}
-          <Text style={styles.sectionLabel}>Informații de bază</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Informații de bază</Text>
           
           <View style={styles.field}>
-            <Text style={styles.label}>Numele locației *</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Numele locației *</Text>
             <TextInput
               testID="venue-name-input"
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
               placeholder="ex: Palatul Regilor"
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={name}
               onChangeText={setName}
             />
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Descriere *</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Descriere *</Text>
             <TextInput
               testID="venue-description-input"
-              style={[styles.textInput, styles.textArea]}
+              style={[styles.textInput, styles.textArea, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Descrie locația ta, atmosfera, ce o face specială..."
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={description}
               onChangeText={setDescription}
               multiline
@@ -192,30 +194,30 @@ export default function AddVenueScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Reguli și informații importante</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Reguli și informații importante</Text>
             <TextInput
               testID="venue-rules-input"
-              style={[styles.textInput, styles.textArea]}
-              placeholder="ex: Se interzice fumatul în interior. Muzica se oprește la ora 23:00. Depozit: 500€..."
-              placeholderTextColor={colors.textTertiary}
+              style={[styles.textInput, styles.textArea, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
+              placeholder="ex: Se interzice fumatul în interior. Muzica se oprește la ora 23:00..."
+              placeholderTextColor={c.textTertiary}
               value={rules}
               onChangeText={setRules}
               multiline
             />
-            <Text style={styles.hint}>Regulile vor fi afișate separat pe pagina locației</Text>
+            <Text style={[styles.hint, { color: c.textTertiary }]}>Regulile vor fi afișate separat pe pagina locației</Text>
           </View>
 
           {/* Location Section */}
-          <Text style={styles.sectionLabel}>Locație</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Locație</Text>
 
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Oraș *</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Oraș *</Text>
               <TextInput
                 testID="venue-city-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="București"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={city}
                 onChangeText={setCity}
               />
@@ -223,76 +225,76 @@ export default function AddVenueScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Adresă completă</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Adresă completă</Text>
             <TextInput
               testID="venue-address-input"
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Strada, Număr, Sector"
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={address}
               onChangeText={setAddress}
             />
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Coordonate GPS (pentru hartă)</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Coordonate GPS (pentru hartă)</Text>
             <View style={styles.row}>
               <TextInput
-                style={[styles.textInput, { flex: 1 }]}
+                style={[styles.textInput, { flex: 1, backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="Latitudine"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={latitude}
                 onChangeText={setLatitude}
                 keyboardType="numeric"
               />
               <TextInput
-                style={[styles.textInput, { flex: 1 }]}
+                style={[styles.textInput, { flex: 1, backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="Longitudine"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={longitude}
                 onChangeText={setLongitude}
                 keyboardType="numeric"
               />
             </View>
             <TouchableOpacity
-              style={styles.gpsBtn}
+              style={[styles.gpsBtn, { backgroundColor: c.primary + '15' }]}
               onPress={getCurrentLocation}
               disabled={gettingLocation}
             >
               {gettingLocation ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={c.primary} />
               ) : (
                 <>
-                  <Ionicons name="locate" size={18} color={colors.primary} />
-                  <Text style={styles.gpsBtnText}>Folosește locația curentă</Text>
+                  <Ionicons name="locate" size={18} color={c.primary} />
+                  <Text style={[styles.gpsBtnText, { color: c.primary }]}>Folosește locația curentă</Text>
                 </>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Capacity & Pricing Section */}
-          <Text style={styles.sectionLabel}>Capacitate și prețuri</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Capacitate și prețuri</Text>
 
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Capacitate min *</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Capacitate min *</Text>
               <TextInput
                 testID="venue-capacity-min-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="50"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={capacityMin}
                 onChangeText={setCapacityMin}
                 keyboardType="numeric"
               />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Capacitate max *</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Capacitate max *</Text>
               <TextInput
                 testID="venue-capacity-max-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="300"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={capacityMax}
                 onChangeText={setCapacityMax}
                 keyboardType="numeric"
@@ -301,33 +303,33 @@ export default function AddVenueScreen() {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Tip preț</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Tip preț</Text>
             <View style={styles.row}>
               <TouchableOpacity
-                style={[styles.priceTypeBtn, priceType === 'on_request' && styles.priceTypeBtnActive]}
+                style={[styles.priceTypeBtn, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, priceType === 'on_request' && { borderColor: c.primary }]}
                 onPress={() => setPriceType('on_request')}
               >
-                <Ionicons name={priceType === 'on_request' ? 'radio-button-on' : 'radio-button-off'} size={20} color={priceType === 'on_request' ? colors.primary : colors.textTertiary} />
-                <Text style={[styles.priceTypeBtnText, priceType === 'on_request' && styles.priceTypeBtnTextActive]}>La cerere</Text>
+                <Ionicons name={priceType === 'on_request' ? 'radio-button-on' : 'radio-button-off'} size={20} color={priceType === 'on_request' ? c.primary : c.textTertiary} />
+                <Text style={[styles.priceTypeBtnText, { color: c.textSecondary }, priceType === 'on_request' && { color: c.textPrimary, fontWeight: '600' }]}>La cerere</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.priceTypeBtn, priceType === 'fixed' && styles.priceTypeBtnActive]}
+                style={[styles.priceTypeBtn, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, priceType === 'fixed' && { borderColor: c.primary }]}
                 onPress={() => setPriceType('fixed')}
               >
-                <Ionicons name={priceType === 'fixed' ? 'radio-button-on' : 'radio-button-off'} size={20} color={priceType === 'fixed' ? colors.primary : colors.textTertiary} />
-                <Text style={[styles.priceTypeBtnText, priceType === 'fixed' && styles.priceTypeBtnTextActive]}>Preț fix</Text>
+                <Ionicons name={priceType === 'fixed' ? 'radio-button-on' : 'radio-button-off'} size={20} color={priceType === 'fixed' ? c.primary : c.textTertiary} />
+                <Text style={[styles.priceTypeBtnText, { color: c.textSecondary }, priceType === 'fixed' && { color: c.textPrimary, fontWeight: '600' }]}>Preț fix</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {priceType === 'fixed' && (
             <View style={styles.field}>
-              <Text style={styles.label}>Preț per persoană (€)</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Preț per persoană (€)</Text>
               <TextInput
                 testID="venue-price-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="75"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={pricePerPerson}
                 onChangeText={setPricePerPerson}
                 keyboardType="numeric"
@@ -336,16 +338,16 @@ export default function AddVenueScreen() {
           )}
 
           {/* Event Types */}
-          <Text style={styles.sectionLabel}>Tip evenimente *</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Tip evenimente *</Text>
           <View style={styles.chipsGrid}>
             {EVENT_TYPES.map((type) => (
               <TouchableOpacity
                 key={type.id}
                 testID={`venue-type-${type.id}`}
-                style={[styles.chip, selectedTypes.includes(type.id) && styles.chipActive]}
+                style={[styles.chip, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, selectedTypes.includes(type.id) && { backgroundColor: c.primary, borderColor: c.primary }]}
                 onPress={() => toggleItem(selectedTypes, setSelectedTypes, type.id)}
               >
-                <Text style={[styles.chipText, selectedTypes.includes(type.id) && styles.chipTextActive]}>
+                <Text style={[styles.chipText, { color: c.textSecondary }, selectedTypes.includes(type.id) && { color: c.background, fontWeight: '700' }]}>
                   {type.label}
                 </Text>
               </TouchableOpacity>
@@ -353,15 +355,15 @@ export default function AddVenueScreen() {
           </View>
 
           {/* Style Tags */}
-          <Text style={styles.sectionLabel}>Stil locație</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Stil locație</Text>
           <View style={styles.chipsGrid}>
             {STYLE_TAGS.map((tag) => (
               <TouchableOpacity
                 key={tag}
-                style={[styles.chip, selectedStyles.includes(tag) && styles.chipActive]}
+                style={[styles.chip, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, selectedStyles.includes(tag) && { backgroundColor: c.primary, borderColor: c.primary }]}
                 onPress={() => toggleItem(selectedStyles, setSelectedStyles, tag)}
               >
-                <Text style={[styles.chipText, selectedStyles.includes(tag) && styles.chipTextActive]}>
+                <Text style={[styles.chipText, { color: c.textSecondary }, selectedStyles.includes(tag) && { color: c.background, fontWeight: '700' }]}>
                   {tag}
                 </Text>
               </TouchableOpacity>
@@ -369,15 +371,15 @@ export default function AddVenueScreen() {
           </View>
 
           {/* Amenities */}
-          <Text style={styles.sectionLabel}>Facilități</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Facilități</Text>
           <View style={styles.chipsGrid}>
             {AMENITIES.map((amenity) => (
               <TouchableOpacity
                 key={amenity}
-                style={[styles.chip, selectedAmenities.includes(amenity) && styles.chipActive]}
+                style={[styles.chip, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, selectedAmenities.includes(amenity) && { backgroundColor: c.primary, borderColor: c.primary }]}
                 onPress={() => toggleItem(selectedAmenities, setSelectedAmenities, amenity)}
               >
-                <Text style={[styles.chipText, selectedAmenities.includes(amenity) && styles.chipTextActive]}>
+                <Text style={[styles.chipText, { color: c.textSecondary }, selectedAmenities.includes(amenity) && { color: c.background, fontWeight: '700' }]}>
                   {amenity}
                 </Text>
               </TouchableOpacity>
@@ -385,15 +387,15 @@ export default function AddVenueScreen() {
           </View>
 
           {/* Contact Section */}
-          <Text style={styles.sectionLabel}>Informații contact</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Informații contact</Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Persoană de contact</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>Persoană de contact</Text>
             <TextInput
               testID="venue-contact-person-input"
-              style={styles.textInput}
+              style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
               placeholder="Ion Popescu"
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={contactPerson}
               onChangeText={setContactPerson}
             />
@@ -401,24 +403,24 @@ export default function AddVenueScreen() {
 
           <View style={styles.row}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Telefon</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Telefon</Text>
               <TextInput
                 testID="venue-phone-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="+40 7xx xxx xxx"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={contactPhone}
                 onChangeText={setContactPhone}
                 keyboardType="phone-pad"
               />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={styles.label}>Email</Text>
+              <Text style={[styles.label, { color: c.textSecondary }]}>Email</Text>
               <TextInput
                 testID="venue-email-input"
-                style={styles.textInput}
+                style={[styles.textInput, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
                 placeholder="contact@locatie.ro"
-                placeholderTextColor={colors.textTertiary}
+                placeholderTextColor={c.textTertiary}
                 value={contactEmail}
                 onChangeText={setContactEmail}
                 keyboardType="email-address"
@@ -428,41 +430,41 @@ export default function AddVenueScreen() {
           </View>
 
           {/* Commission Tier */}
-          <Text style={styles.sectionLabel}>Plan de vizibilitate</Text>
-          <Text style={styles.sectionDesc}>Alege nivelul de comision pentru o vizibilitate crescută în rezultatele de căutare.</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Plan de vizibilitate</Text>
+          <Text style={[styles.sectionDesc, { color: c.textSecondary }]}>Alege nivelul de comision pentru o vizibilitate crescută în rezultatele de căutare.</Text>
           
           {COMMISSION_TIERS.map((tier) => (
             <TouchableOpacity
               key={tier.id}
-              style={[styles.tierCard, commissionTier === tier.id && styles.tierCardActive]}
+              style={[styles.tierCard, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, commissionTier === tier.id && { borderColor: c.primary, backgroundColor: c.primary + '10' }]}
               onPress={() => setCommissionTier(tier.id)}
             >
               <View style={styles.tierRadio}>
                 <Ionicons
                   name={commissionTier === tier.id ? 'radio-button-on' : 'radio-button-off'}
                   size={22}
-                  color={commissionTier === tier.id ? colors.primary : colors.textTertiary}
+                  color={commissionTier === tier.id ? c.primary : c.textTertiary}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.tierLabel, commissionTier === tier.id && styles.tierLabelActive]}>{tier.label}</Text>
-                <Text style={styles.tierDesc}>{tier.desc}</Text>
+                <Text style={[styles.tierLabel, { color: c.textSecondary }, commissionTier === tier.id && { color: c.textPrimary }]}>{tier.label}</Text>
+                <Text style={[styles.tierDesc, { color: c.textTertiary }]}>{tier.desc}</Text>
               </View>
               {tier.id !== 'standard' && (
-                <Ionicons name={tier.id === 'elite' ? 'diamond' : 'star'} size={20} color={tier.id === 'elite' ? colors.primary : colors.info} />
+                <Ionicons name={tier.id === 'elite' ? 'diamond' : 'star'} size={20} color={tier.id === 'elite' ? c.primary : c.info} />
               )}
             </TouchableOpacity>
           ))}
 
           {/* Images */}
-          <Text style={styles.sectionLabel}>Imagini</Text>
+          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Imagini</Text>
           <View style={styles.field}>
-            <Text style={styles.label}>URL-uri imagini (separate prin virgulă)</Text>
+            <Text style={[styles.label, { color: c.textSecondary }]}>URL-uri imagini (separate prin virgulă)</Text>
             <TextInput
               testID="venue-images-input"
-              style={[styles.textInput, styles.textArea]}
+              style={[styles.textInput, styles.textArea, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
               placeholder="https://example.com/img1.jpg, https://..."
-              placeholderTextColor={colors.textTertiary}
+              placeholderTextColor={c.textTertiary}
               value={imageUrls}
               onChangeText={setImageUrls}
               multiline
@@ -472,14 +474,14 @@ export default function AddVenueScreen() {
           {/* Submit */}
           <TouchableOpacity
             testID="submit-venue-btn"
-            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
+            style={[styles.submitBtn, { backgroundColor: c.primary }, submitting && { opacity: 0.7 }]}
             onPress={handleSubmit}
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={colors.background} />
+              <ActivityIndicator color={c.background} />
             ) : (
-              <Text style={styles.submitBtnText}>Publică Locația</Text>
+              <Text style={[styles.submitBtnText, { color: c.background }]}>Publică Locația</Text>
             )}
           </TouchableOpacity>
 
@@ -491,119 +493,96 @@ export default function AddVenueScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { padding: spacing.lg },
+  container: { flex: 1 },
+  scrollContent: { padding: 24 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: 24,
   },
   closeBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surfaceHighlight,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { ...typography.h2, color: colors.textPrimary },
+  title: { fontSize: 22, fontWeight: '600' },
   sectionLabel: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 24,
+    marginBottom: 8,
   },
   sectionDesc: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
+    fontSize: 14,
+    marginBottom: 16,
   },
-  field: { marginBottom: spacing.md },
+  field: { marginBottom: 16 },
   label: {
-    ...typography.bodySm,
-    color: colors.textSecondary,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: spacing.sm,
+    marginBottom: 8,
   },
   textInput: {
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    color: colors.textPrimary,
-    ...typography.bodyLg,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   textArea: { minHeight: 100, textAlignVertical: 'top' },
   hint: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-    textTransform: 'none',
+    fontSize: 12,
+    marginTop: 4,
   },
-  row: { flexDirection: 'row', gap: spacing.md },
+  row: { flexDirection: 'row', gap: 16 },
   gpsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.primary + '15',
-    borderRadius: radius.lg,
+    gap: 8,
+    marginTop: 8,
+    paddingVertical: 8,
+    borderRadius: 12,
   },
-  gpsBtnText: { ...typography.bodySm, color: colors.primary, fontWeight: '600' },
+  gpsBtnText: { fontSize: 14, fontWeight: '600' },
   priceTypeBtn: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.lg,
+    gap: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  priceTypeBtnActive: { borderColor: colors.primary },
-  priceTypeBtnText: { ...typography.bodySm, color: colors.textSecondary },
-  priceTypeBtnTextActive: { color: colors.textPrimary, fontWeight: '600' },
-  chipsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  priceTypeBtnText: { fontSize: 14 },
+  chipsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: radius.full,
-    backgroundColor: colors.surfaceHighlight,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { ...typography.bodySm, color: colors.textSecondary, fontWeight: '500' },
-  chipTextActive: { color: colors.background, fontWeight: '700' },
+  chipText: { fontSize: 14, fontWeight: '500' },
   tierCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.surfaceHighlight,
-    borderRadius: radius.lg,
-    marginBottom: spacing.sm,
+    gap: 16,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
     borderWidth: 1,
-    borderColor: colors.border,
   },
-  tierCardActive: { borderColor: colors.primary, backgroundColor: colors.primary + '10' },
   tierRadio: {},
-  tierLabel: { ...typography.bodyLg, color: colors.textSecondary, fontWeight: '600' },
-  tierLabelActive: { color: colors.textPrimary },
-  tierDesc: { ...typography.bodySm, color: colors.textTertiary, marginTop: 2 },
+  tierLabel: { fontSize: 16, fontWeight: '600' },
+  tierDesc: { fontSize: 14, marginTop: 2 },
   submitBtn: {
-    backgroundColor: colors.primary,
     paddingVertical: 16,
-    borderRadius: radius.full,
+    borderRadius: 999,
     alignItems: 'center',
-    marginTop: spacing.lg,
+    marginTop: 24,
   },
-  submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { ...typography.bodyLg, color: colors.background, fontWeight: '700' },
+  submitBtnText: { fontSize: 16, fontWeight: '700' },
 });
