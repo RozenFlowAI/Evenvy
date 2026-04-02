@@ -10,6 +10,7 @@ import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, EVENT_TYPE_LABELS, EVENT_TYPE_ICONS, Venue } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';
 import VenueBadges from '../../src/components/VenueBadges';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 48 - 16) / 3; // 3 columns with gaps
@@ -106,7 +107,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Event Types - Single accent color (gold) */}
+        {/* Event Types - Single accent color (gold), MaterialCommunityIcons */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Ce tip de eveniment planifici?</Text>
           <View style={styles.typesGrid}>
@@ -115,11 +116,11 @@ export default function HomeScreen() {
                 key={id}
                 testID={`event-type-${id}`}
                 activeOpacity={0.7}
-                style={[styles.typeCard, { backgroundColor: c.surface, borderColor: c.border }]}
+                style={[styles.typeCard, { backgroundColor: c.surface, borderColor: c.primary + '40' }]}
                 onPress={() => router.push({ pathname: '/(tabs)/search', params: { event_type: id } })}
               >
                 <View style={[styles.typeIconWrap, { backgroundColor: c.primary + '15' }]}>
-                  <Ionicons name={(EVENT_TYPE_ICONS[id] || 'star') as any} size={20} color={c.primary} />
+                  <MaterialCommunityIcons name={(EVENT_TYPE_ICONS[id] || 'star') as any} size={22} color={c.primary} />
                 </View>
                 <Text style={[styles.typeLabel, { color: c.textPrimary }]} numberOfLines={1}>{label}</Text>
               </TouchableOpacity>
@@ -203,10 +204,13 @@ export default function HomeScreen() {
                       style={styles.venueImage}
                       defaultSource={{ uri: PLACEHOLDER_IMAGE }}
                     />
-                    {/* Skeleton overlay while loading */}
+                    {/* Skeleton shimmer while loading */}
                     {(!venue.images || venue.images.length === 0) && (
-                      <View style={[styles.imagePlaceholder, { backgroundColor: c.surfaceHighlight }]}>
-                        <Ionicons name="image-outline" size={28} color={c.textTertiary} />
+                      <View style={styles.imagePlaceholder}>
+                        <SkeletonLoader width="100%" height="100%" borderRadius={0} />
+                        <View style={styles.placeholderIcon}>
+                          <Ionicons name="image-outline" size={28} color={c.textTertiary} />
+                        </View>
                       </View>
                     )}
                   </View>
@@ -357,8 +361,9 @@ const styles = StyleSheet.create({
   // Venue cards - FIXED: image placeholder, price truncation
   venueCard: { width: width * 0.6, borderRadius: 12, overflow: 'hidden', borderWidth: 1 },
   venueImageContainer: { width: '100%', height: 130, position: 'relative' },
-  venueImage: { width: '100%', height: '100%', backgroundColor: '#1a1a1a' },
-  imagePlaceholder: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
+  venueImage: { width: '100%', height: '100%' },
+  imagePlaceholder: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  placeholderIcon: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' },
   venueBadge: { position: 'absolute', top: 8, right: 8 },
   venueInfo: { padding: 10 },
   venueLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 },

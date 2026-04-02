@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, EVENT_TYPE_LABELS, Venue } from '../../src/utils/api';
 import VenueBadges from '../../src/components/VenueBadges';
+import SkeletonLoader from '../../src/components/SkeletonLoader';
 
 const { width } = Dimensions.get('window');
 
@@ -72,9 +73,13 @@ export default function SearchScreen() {
           source={{ uri: item.images?.[0] || PLACEHOLDER_IMAGE }} 
           style={styles.venueImage}
         />
+        {/* Skeleton shimmer while loading */}
         {(!item.images || item.images.length === 0) && (
-          <View style={[styles.imagePlaceholder, { backgroundColor: c.surfaceHighlight }]}>
-            <Ionicons name="image-outline" size={32} color={c.textTertiary} />
+          <View style={styles.imagePlaceholder}>
+            <SkeletonLoader width="100%" height="100%" borderRadius={0} />
+            <View style={styles.placeholderIcon}>
+              <Ionicons name="image-outline" size={32} color={c.textTertiary} />
+            </View>
           </View>
         )}
       </View>
@@ -314,10 +319,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   imageContainer: { width: '100%', height: 160, position: 'relative' },
-  venueImage: { width: '100%', height: '100%', backgroundColor: '#1a1a1a' },
+  venueImage: { width: '100%', height: '100%' },
   imagePlaceholder: { 
     position: 'absolute', 
-    top: 0, left: 0, right: 0, bottom: 0, 
+    top: 0, left: 0, right: 0, bottom: 0
+  },
+  placeholderIcon: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center', 
     justifyContent: 'center' 
   },
