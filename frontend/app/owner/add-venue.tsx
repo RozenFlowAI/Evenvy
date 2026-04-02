@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, Alert, ActivityIndicator
+  KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, authHeaders } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';
@@ -28,12 +29,6 @@ const STYLE_TAGS = [
 const AMENITIES = [
   'Parcare', 'Catering inclus', 'DJ / Muzică live', 'Decorațiuni', 'Fotograf',
   'Bar', 'Terasă', 'Grădină', 'Piscină', 'WiFi', 'Climatizare', 'Cameră mirilor'
-];
-
-const COMMISSION_TIERS = [
-  { id: 'standard', label: 'Standard (10%)', desc: 'Listare normală' },
-  { id: 'premium', label: 'Premium (15%)', desc: 'Badge "Recomandat" + prioritate' },
-  { id: 'elite', label: 'Elite (20%)', desc: 'Badge "Top Alegere" + maximă vizibilitate' },
 ];
 
 export default function AddVenueScreen() {
@@ -71,11 +66,9 @@ export default function AddVenueScreen() {
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   
-  // Commission
-  const [commissionTier, setCommissionTier] = useState('standard');
-  
-  // Images
-  const [imageUrls, setImageUrls] = useState('');
+  // Images - now using local URIs from gallery
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const toggleItem = (list: string[], setList: (val: string[]) => void, id: string) => {
     setList(list.includes(id) ? list.filter(t => t !== id) : [...list, id]);
@@ -100,6 +93,73 @@ export default function AddVenueScreen() {
     }
   };
 
+  const pickImages = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permisiune necesară', 'Avem nevoie de acces la galerie pentru a selecta imagini.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        selectionLimit: 10,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newImages = result.assets.map(asset => asset.uri);
+        setImages(prev => [...prev, ...newImages].slice(0, 10)); // Max 10 images
+      }
+    } catch (e) {
+      Alert.alert('Eroare', 'Nu am putut selecta imaginile.');
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImageToServer = async (uri: string): Promise<string | null> => {
+    try {
+      // Create form data
+      const formData = new FormData();
+      const filename = uri.split('/').pop() || 'image.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      
+      formData.append('file', {
+        uri,
+        name: filename,
+        type,
+      } as any);
+
+      // Use the API base URL from environment
+      const baseUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const response = await fetch(`${baseUrl}/api/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Return full URL
+        return `${baseUrl}${data.url}`;
+      }
+      console.log('Upload failed:', await response.text());
+      return null;
+    } catch (e) {
+      console.error('Upload error:', e);
+      return null;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!name || !description || !city || !capacityMin || !capacityMax || selectedTypes.length === 0) {
       Alert.alert('Eroare', 'Completează toate câmpurile obligatorii (*)');
@@ -112,7 +172,23 @@ export default function AddVenueScreen() {
     
     setSubmitting(true);
     try {
-      const imagesList = imageUrls.split(',').map(u => u.trim()).filter(Boolean);
+      // Upload images if any
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        setUploadingImages(true);
+        for (const uri of images) {
+          const uploadedUrl = await uploadImageToServer(uri);
+          if (uploadedUrl) {
+            imageUrls.push(uploadedUrl);
+          }
+        }
+        setUploadingImages(false);
+      }
+
+      // If no images uploaded successfully, use placeholder
+      if (imageUrls.length === 0) {
+        imageUrls = ['https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800'];
+      }
 
       await apiCall('/venues', {
         method: 'POST',
@@ -132,13 +208,12 @@ export default function AddVenueScreen() {
           event_types: selectedTypes,
           style_tags: selectedStyles,
           amenities: selectedAmenities,
-          images: imagesList.length > 0 ? imagesList : [
-            'https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=800'
-          ],
+          images: imageUrls,
           contact_person: contactPerson,
           contact_phone: contactPhone,
           contact_email: contactEmail,
-          commission_tier: commissionTier,
+          // No commission tier - free for 3 months!
+          commission_tier: 'standard',
         }),
       });
       
@@ -149,6 +224,7 @@ export default function AddVenueScreen() {
       Alert.alert('Eroare', e.message);
     } finally {
       setSubmitting(false);
+      setUploadingImages(false);
     }
   };
 
@@ -163,6 +239,17 @@ export default function AddVenueScreen() {
             </TouchableOpacity>
             <Text style={[styles.title, { color: c.textPrimary }]}>Adaugă Locație</Text>
             <View style={{ width: 40 }} />
+          </View>
+
+          {/* Free period banner */}
+          <View style={[styles.freeBanner, { backgroundColor: c.success + '20', borderColor: c.success }]}>
+            <Ionicons name="gift" size={20} color={c.success} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.freeBannerTitle, { color: c.success }]}>Listare GRATUITĂ!</Text>
+              <Text style={[styles.freeBannerText, { color: c.textSecondary }]}>
+                Primele 3 luni sunt gratuite pentru toți proprietarii. Fără comisioane!
+              </Text>
+            </View>
           </View>
 
           {/* Basic Info Section */}
@@ -429,46 +516,35 @@ export default function AddVenueScreen() {
             </View>
           </View>
 
-          {/* Commission Tier */}
-          <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Plan de vizibilitate</Text>
-          <Text style={[styles.sectionDesc, { color: c.textSecondary }]}>Alege nivelul de comision pentru o vizibilitate crescută în rezultatele de căutare.</Text>
-          
-          {COMMISSION_TIERS.map((tier) => (
-            <TouchableOpacity
-              key={tier.id}
-              style={[styles.tierCard, { backgroundColor: c.surfaceHighlight, borderColor: c.border }, commissionTier === tier.id && { borderColor: c.primary, backgroundColor: c.primary + '10' }]}
-              onPress={() => setCommissionTier(tier.id)}
-            >
-              <View style={styles.tierRadio}>
-                <Ionicons
-                  name={commissionTier === tier.id ? 'radio-button-on' : 'radio-button-off'}
-                  size={22}
-                  color={commissionTier === tier.id ? c.primary : c.textTertiary}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.tierLabel, { color: c.textSecondary }, commissionTier === tier.id && { color: c.textPrimary }]}>{tier.label}</Text>
-                <Text style={[styles.tierDesc, { color: c.textTertiary }]}>{tier.desc}</Text>
-              </View>
-              {tier.id !== 'standard' && (
-                <Ionicons name={tier.id === 'elite' ? 'diamond' : 'star'} size={20} color={tier.id === 'elite' ? c.primary : c.info} />
-              )}
-            </TouchableOpacity>
-          ))}
-
-          {/* Images */}
+          {/* Images Section - Gallery Picker */}
           <Text style={[styles.sectionLabel, { color: c.textPrimary }]}>Imagini</Text>
-          <View style={styles.field}>
-            <Text style={[styles.label, { color: c.textSecondary }]}>URL-uri imagini (separate prin virgulă)</Text>
-            <TextInput
-              testID="venue-images-input"
-              style={[styles.textInput, styles.textArea, { backgroundColor: c.surfaceHighlight, borderColor: c.border, color: c.textPrimary }]}
-              placeholder="https://example.com/img1.jpg, https://..."
-              placeholderTextColor={c.textTertiary}
-              value={imageUrls}
-              onChangeText={setImageUrls}
-              multiline
-            />
+          <Text style={[styles.sectionDesc, { color: c.textSecondary }]}>
+            Adaugă până la 10 fotografii ale locației tale.
+          </Text>
+          
+          <View style={styles.imagesGrid}>
+            {images.map((uri, index) => (
+              <View key={index} style={styles.imagePreviewContainer}>
+                <Image source={{ uri }} style={styles.imagePreview} />
+                <TouchableOpacity
+                  style={[styles.removeImageBtn, { backgroundColor: c.error }]}
+                  onPress={() => removeImage(index)}
+                >
+                  <Ionicons name="close" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ))}
+            
+            {images.length < 10 && (
+              <TouchableOpacity
+                testID="add-image-btn"
+                style={[styles.addImageBtn, { backgroundColor: c.surfaceHighlight, borderColor: c.border }]}
+                onPress={pickImages}
+              >
+                <Ionicons name="add" size={32} color={c.primary} />
+                <Text style={[styles.addImageText, { color: c.textSecondary }]}>Adaugă</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Submit */}
@@ -479,7 +555,12 @@ export default function AddVenueScreen() {
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={c.background} />
+              <View style={styles.submitLoading}>
+                <ActivityIndicator color={c.background} />
+                <Text style={[styles.submitBtnText, { color: c.background }]}>
+                  {uploadingImages ? 'Se încarcă imaginile...' : 'Se publică...'}
+                </Text>
+              </View>
             ) : (
               <Text style={[styles.submitBtnText, { color: c.background }]}>Publică Locația</Text>
             )}
@@ -499,7 +580,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   closeBtn: {
     width: 40,
@@ -509,6 +590,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: { fontSize: 22, fontWeight: '600' },
+  // Free banner
+  freeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  freeBannerTitle: { fontSize: 16, fontWeight: '700' },
+  freeBannerText: { fontSize: 13, marginTop: 2 },
   sectionLabel: {
     fontSize: 18,
     fontWeight: '600',
@@ -517,7 +610,7 @@ const styles = StyleSheet.create({
   },
   sectionDesc: {
     fontSize: 14,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   field: { marginBottom: 16 },
   label: {
@@ -566,23 +659,57 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: { fontSize: 14, fontWeight: '500' },
-  tierCard: {
+  // Images
+  imagesGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 8,
-    borderWidth: 1,
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  tierRadio: {},
-  tierLabel: { fontSize: 16, fontWeight: '600' },
-  tierDesc: { fontSize: 14, marginTop: 2 },
+  imagePreviewContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addImageBtn: {
+    width: 100,
+    height: 100,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addImageText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
+  },
   submitBtn: {
     paddingVertical: 16,
     borderRadius: 999,
     alignItems: 'center',
     marginTop: 24,
+  },
+  submitLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   submitBtnText: { fontSize: 16, fontWeight: '700' },
 });

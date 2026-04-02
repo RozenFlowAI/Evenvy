@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  ActivityIndicator, RefreshControl, Alert, Modal
+  ActivityIndicator, RefreshControl, Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -19,11 +19,8 @@ type Stats = {
   total_views: number;
 };
 
-const PROMOTION_PACKAGES = [
-  { id: 'bronze', name: 'Pachet Bronze', days: 7, price: 49, desc: 'Poziție îmbunătățită în rezultate', badge: null },
-  { id: 'silver', name: 'Pachet Silver', days: 14, price: 89, desc: 'Top în căutări + badge "Promovat"', badge: 'Promovat' },
-  { id: 'gold', name: 'Pachet Gold', days: 30, price: 149, desc: 'Banner pe homepage + toate beneficiile', badge: 'Top Promovat' },
-];
+// FREE PERIOD - No paid promotions for 3 months
+const FREE_PERIOD_END = new Date('2025-09-01');
 
 export default function OwnerDashboard() {
   const router = useRouter();
@@ -49,8 +46,6 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'quotes' | 'venues'>('quotes');
-  const [promoteModal, setPromoteModal] = useState<{ visible: boolean; venueId: string | null }>({ visible: false, venueId: null });
-  const [promoting, setPromoting] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!token) return;
@@ -87,23 +82,12 @@ export default function OwnerDashboard() {
     }
   };
 
-  const purchasePromotion = async (packageId: string) => {
-    if (!token || !promoteModal.venueId) return;
-    setPromoting(true);
-    try {
-      await apiCall(`/venues/${promoteModal.venueId}/promote`, {
-        method: 'POST',
-        headers: authHeaders(token),
-        body: JSON.stringify({ venue_id: promoteModal.venueId, package: packageId }),
-      });
-      Alert.alert('Succes!', 'Promovarea a fost activată cu succes.');
-      setPromoteModal({ visible: false, venueId: null });
-      loadData();
-    } catch (e: any) {
-      Alert.alert('Eroare', e.message);
-    } finally {
-      setPromoting(false);
-    }
+  // Format remaining free days
+  const getFreeDaysRemaining = () => {
+    const now = new Date();
+    const diff = FREE_PERIOD_END.getTime() - now.getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? days : 0;
   };
 
   if (loading) {
@@ -305,13 +289,16 @@ export default function OwnerDashboard() {
                       </View>
                     )}
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.promoteBtn, { backgroundColor: c.primary + '15' }]}
-                    onPress={() => setPromoteModal({ visible: true, venueId: venue.id })}
-                  >
-                    <Ionicons name="rocket" size={18} color={c.primary} />
-                    <Text style={[styles.promoteBtnText, { color: c.primary }]}>Promovează</Text>
-                  </TouchableOpacity>
+                  {/* Free period badge - no paid promotions */}
+                  <View style={[styles.freeBadge, { backgroundColor: c.success + '15' }]}>
+                    <Ionicons name="gift" size={16} color={c.success} />
+                    <Text style={[styles.freeBadgeText, { color: c.success }]}>
+                      Gratuit
+                    </Text>
+                    <Text style={[styles.freeBadgeDays, { color: c.textTertiary }]}>
+                      {getFreeDaysRemaining()} zile
+                    </Text>
+                  </View>
                 </View>
               ))
             )}
@@ -320,47 +307,6 @@ export default function OwnerDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Promotion Modal */}
-      <Modal visible={promoteModal.visible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: c.surface }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: c.textPrimary }]}>Pachete de promovare</Text>
-              <TouchableOpacity onPress={() => setPromoteModal({ visible: false, venueId: null })}>
-                <Ionicons name="close" size={24} color={c.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            <Text style={[styles.modalDesc, { color: c.textSecondary }]}>
-              Crește vizibilitatea locației tale și primește mai multe cereri de ofertă.
-            </Text>
-            {PROMOTION_PACKAGES.map((pkg) => (
-              <TouchableOpacity
-                key={pkg.id}
-                style={[styles.packageCard, { backgroundColor: c.surfaceHighlight, borderColor: c.border }]}
-                onPress={() => purchasePromotion(pkg.id)}
-                disabled={promoting}
-              >
-                <View style={{ flex: 1 }}>
-                  <View style={styles.packageHeader}>
-                    <Text style={[styles.packageName, { color: c.textPrimary }]}>{pkg.name}</Text>
-                    {pkg.badge && (
-                      <View style={[styles.packageBadge, { backgroundColor: pkg.id === 'gold' ? c.error : c.warning }]}>
-                        <Text style={styles.packageBadgeText}>{pkg.badge}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <Text style={[styles.packageDesc, { color: c.textSecondary }]}>{pkg.desc}</Text>
-                  <Text style={[styles.packageDays, { color: c.textTertiary }]}>{pkg.days} zile</Text>
-                </View>
-                <View style={styles.packagePrice}>
-                  <Text style={[styles.priceValue, { color: c.primary }]}>€{pkg.price}</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -478,44 +424,15 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   activePromoText: { fontSize: 12 },
-  promoteBtn: {
+  // Free period badge
+  freeBadge: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 12,
+    gap: 2,
   },
-  promoteBtnText: { fontSize: 12 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
-  modalContent: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 24,
-    paddingBottom: 48,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  modalTitle: { fontSize: 22, fontWeight: '600' },
-  modalDesc: { fontSize: 14, marginBottom: 24 },
-  packageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-  },
-  packageHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  packageName: { fontSize: 16, fontWeight: '700' },
-  packageBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999 },
-  packageBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  packageDesc: { fontSize: 14, marginTop: 4 },
-  packageDays: { fontSize: 12, marginTop: 4 },
-  packagePrice: { alignItems: 'center' },
-  priceValue: { fontSize: 22, fontWeight: '600' },
+  freeBadgeText: { fontSize: 12, fontWeight: '700' },
+  freeBadgeDays: { fontSize: 10 },
 });
