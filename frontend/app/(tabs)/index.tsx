@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../src/context/ThemeContext';
 import { apiCall, EVENT_TYPE_LABELS, EVENT_TYPE_ICONS, Venue } from '../../src/utils/api';
 import { useAuth } from '../../src/context/AuthContext';

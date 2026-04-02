@@ -41,14 +41,15 @@ export const EVENT_TYPE_LABELS: Record<string, string> = {
   conference: 'Conferință',
 };
 
+// Using MaterialCommunityIcons names for better, more specific icons
 export const EVENT_TYPE_ICONS: Record<string, string> = {
-  wedding: 'heart',
-  baptism: 'water',
-  corporate: 'briefcase',
-  civil_wedding: 'ribbon',
-  party: 'musical-notes',
-  birthday: 'gift',
-  conference: 'people',
+  wedding: 'ring',                    // 💍 Inel - universal pentru nuntă
+  baptism: 'candle',                  // 🕯️ Lumânare - specific cultural român
+  corporate: 'office-building',        // 🏢 Clădire birouri - clar B2B
+  civil_wedding: 'file-document-outline', // 📜 Document - act oficial
+  party: 'party-popper',              // 🎉 Confetti - instant recognoscibil
+  birthday: 'cake-variant',           // 🎂 Tort - clasic
+  conference: 'account-group',        // 👥 Grup de persoane
 };
 
 // Loyalty Tiers
