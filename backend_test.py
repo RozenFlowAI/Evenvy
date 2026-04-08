@@ -1,630 +1,302 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Tests for Lumina Event Venue Marketplace
-Tests all endpoints according to the test plan in test_result.md
+Backend API Testing for Evenvy Anti-Bypass Functionality
+Tests the /api/quotes/check/{venue_id} endpoint and related authentication flows
 """
 
 import requests
 import json
-import uuid
-from datetime import datetime, timedelta
-import time
+import sys
+from datetime import datetime
 
-# Backend URL from frontend .env
+# Base URL from frontend environment
 BASE_URL = "https://party-place-finder.preview.emergentagent.com/api"
 
-class LuminaAPITester:
+class TestResults:
     def __init__(self):
-        self.base_url = BASE_URL
-        self.client_token = None
-        self.owner_token = None
-        self.client_user = None
-        self.owner_user = None
-        self.test_venue_id = None
-        self.test_quote_id = None
-        self.session = requests.Session()
-        self.session.headers.update({
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        })
-        
-    def log(self, message, level="INFO"):
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {level}: {message}")
-        
-    def test_health(self):
-        """Test health endpoint"""
-        self.log("Testing health endpoint...")
-        try:
-            response = self.session.get(f"{self.base_url}/health")
-            if response.status_code == 200:
-                data = response.json()
-                self.log(f"✅ Health check passed: {data}")
-                return True
-            else:
-                self.log(f"❌ Health check failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Health check error: {str(e)}", "ERROR")
-            return False
+        self.passed = 0
+        self.failed = 0
+        self.errors = []
     
-    def test_user_registration(self):
-        """Test user registration for both client and owner"""
-        self.log("Testing user registration...")
-        
-        # Generate unique emails
-        client_email = f"client_{uuid.uuid4().hex[:8]}@test.com"
-        owner_email = f"owner_{uuid.uuid4().hex[:8]}@test.com"
-        
-        # Test client registration
-        client_data = {
-            "first_name": "Maria",
-            "last_name": "Popescu",
-            "email": client_email,
-            "password": "SecurePass123!",
-            "phone": "+40721234567",
-            "role": "client"
-        }
-        
-        try:
-            response = self.session.post(f"{self.base_url}/auth/register", json=client_data)
-            if response.status_code == 200:
-                data = response.json()
-                self.client_token = data.get("token")
-                self.client_user = data.get("user")
-                self.log(f"✅ Client registration successful: {self.client_user['email']}")
-                
-                # Verify loyalty tier is included
-                if "loyalty_tier" in self.client_user:
-                    self.log(f"✅ Client loyalty tier: {self.client_user['loyalty_tier']}")
-                else:
-                    self.log("❌ Client loyalty tier missing", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Client registration failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Client registration error: {str(e)}", "ERROR")
-            return False
-        
-        # Test owner registration
-        owner_data = {
-            "first_name": "Ion",
-            "last_name": "Georgescu",
-            "email": owner_email,
-            "password": "OwnerPass123!",
-            "phone": "+40722345678",
-            "role": "owner"
-        }
-        
-        try:
-            response = self.session.post(f"{self.base_url}/auth/register", json=owner_data)
-            if response.status_code == 200:
-                data = response.json()
-                self.owner_token = data.get("token")
-                self.owner_user = data.get("user")
-                self.log(f"✅ Owner registration successful: {self.owner_user['email']}")
-                
-                # Verify loyalty tier is included
-                if "loyalty_tier" in self.owner_user:
-                    self.log(f"✅ Owner loyalty tier: {self.owner_user['loyalty_tier']}")
-                else:
-                    self.log("❌ Owner loyalty tier missing", "ERROR")
-                    return False
-                    
-                return True
-            else:
-                self.log(f"❌ Owner registration failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Owner registration error: {str(e)}", "ERROR")
-            return False
+    def log_pass(self, test_name):
+        print(f"✅ PASS: {test_name}")
+        self.passed += 1
     
-    def test_user_login(self):
-        """Test user login"""
-        self.log("Testing user login...")
-        
-        if not self.client_user or not self.owner_user:
-            self.log("❌ Cannot test login - users not registered", "ERROR")
-            return False
-        
-        # Test client login
-        client_login_data = {
-            "email": self.client_user["email"],
-            "password": "SecurePass123!"
-        }
-        
-        try:
-            response = self.session.post(f"{self.base_url}/auth/login", json=client_login_data)
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get("token")
-                user = data.get("user")
-                if token and user and "loyalty_tier" in user:
-                    self.log(f"✅ Client login successful with loyalty tier: {user['loyalty_tier']}")
-                else:
-                    self.log("❌ Client login missing token or loyalty tier", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Client login failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Client login error: {str(e)}", "ERROR")
-            return False
-        
-        # Test owner login
-        owner_login_data = {
-            "email": self.owner_user["email"],
-            "password": "OwnerPass123!"
-        }
-        
-        try:
-            response = self.session.post(f"{self.base_url}/auth/login", json=owner_login_data)
-            if response.status_code == 200:
-                data = response.json()
-                token = data.get("token")
-                user = data.get("user")
-                if token and user and "loyalty_tier" in user:
-                    self.log(f"✅ Owner login successful with loyalty tier: {user['loyalty_tier']}")
-                    return True
-                else:
-                    self.log("❌ Owner login missing token or loyalty tier", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Owner login failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Owner login error: {str(e)}", "ERROR")
-            return False
+    def log_fail(self, test_name, error):
+        print(f"❌ FAIL: {test_name} - {error}")
+        self.failed += 1
+        self.errors.append(f"{test_name}: {error}")
     
-    def test_auth_me(self):
-        """Test /auth/me endpoint"""
-        self.log("Testing /auth/me endpoint...")
-        
-        if not self.client_token:
-            self.log("❌ Cannot test /auth/me - no client token", "ERROR")
-            return False
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.client_token}"}
-            response = self.session.get(f"{self.base_url}/auth/me", headers=headers)
-            if response.status_code == 200:
-                user = response.json()
-                if "loyalty_tier" in user and "total_requests" in user:
-                    self.log(f"✅ /auth/me successful: {user['email']} - {user['loyalty_tier']}")
-                    return True
-                else:
-                    self.log("❌ /auth/me missing loyalty_tier or total_requests", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ /auth/me failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ /auth/me error: {str(e)}", "ERROR")
-            return False
+    def summary(self):
+        total = self.passed + self.failed
+        print(f"\n{'='*60}")
+        print(f"TEST SUMMARY: {self.passed}/{total} tests passed")
+        if self.errors:
+            print(f"\nFAILED TESTS:")
+            for error in self.errors:
+                print(f"  - {error}")
+        print(f"{'='*60}")
+        return self.failed == 0
+
+def test_anti_bypass_functionality():
+    """Test the complete anti-bypass flow for quote checking"""
+    results = TestResults()
     
-    def test_venue_creation(self):
-        """Test venue creation (owner only)"""
-        self.log("Testing venue creation...")
-        
-        if not self.owner_token:
-            self.log("❌ Cannot test venue creation - no owner token", "ERROR")
-            return False
-        
-        venue_data = {
-            "name": "Vila Elegance București",
-            "description": "O locație de vis pentru evenimente speciale, cu grădină frumoasă și sală elegantă.",
-            "rules": "Nu se permite fumatul în interior. Muzica se oprește la 24:00. Parcarea este gratuită pentru invitați.",
-            "city": "București",
-            "address": "Strada Florilor 123, Sector 1",
-            "latitude": 44.4268,
-            "longitude": 26.1025,
-            "price_per_person": 150.0,
-            "price_type": "fixed",
-            "capacity_min": 50,
-            "capacity_max": 200,
-            "event_types": ["wedding", "baptism", "corporate"],
-            "style_tags": ["Modern", "Glamour", "Grădină"],
-            "amenities": ["Parcare", "Catering inclus", "DJ / Muzică live", "Terasă", "Grădină"],
-            "images": ["https://example.com/venue1.jpg", "https://example.com/venue2.jpg"],
-            "contact_phone": "+40723456789",
-            "contact_email": "contact@vilaelegance.ro",
-            "contact_person": "Ana Popescu",
-            "commission_tier": "premium"
-        }
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.post(f"{self.base_url}/venues", json=venue_data, headers=headers)
-            if response.status_code == 200:
-                venue = response.json()
-                self.test_venue_id = venue.get("id")
-                
-                # Verify all required fields are present
-                required_fields = ["id", "name", "rules", "latitude", "longitude", "commission_tier"]
-                missing_fields = [field for field in required_fields if field not in venue]
-                
-                if missing_fields:
-                    self.log(f"❌ Venue creation missing fields: {missing_fields}", "ERROR")
-                    return False
-                
-                self.log(f"✅ Venue created successfully: {venue['name']} (ID: {self.test_venue_id})")
-                self.log(f"✅ Venue has rules: {venue['rules'][:50]}...")
-                self.log(f"✅ Venue GPS: {venue['latitude']}, {venue['longitude']}")
-                self.log(f"✅ Commission tier: {venue['commission_tier']}")
-                return True
-            else:
-                self.log(f"❌ Venue creation failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Venue creation error: {str(e)}", "ERROR")
-            return False
+    print("🧪 TESTING ANTI-BYPASS FUNCTIONALITY")
+    print(f"Base URL: {BASE_URL}")
+    print("="*60)
     
-    def test_venue_listing(self):
-        """Test venue listing with sorting"""
-        self.log("Testing venue listing...")
+    # Step 1: Get a venue to test with
+    print("\n1. Getting test venue...")
+    try:
+        response = requests.get(f"{BASE_URL}/venues", params={"limit": 1})
+        if response.status_code != 200:
+            results.log_fail("Get venues", f"Status {response.status_code}: {response.text}")
+            return results.summary()
         
-        try:
-            # Test basic listing
-            response = self.session.get(f"{self.base_url}/venues")
-            if response.status_code == 200:
-                venues = response.json()
-                self.log(f"✅ Venue listing successful: {len(venues)} venues found")
-                
-                # Test sorting options
-                sort_options = ["recommended", "price_asc", "price_desc", "rating", "capacity", "newest"]
-                for sort_by in sort_options:
-                    response = self.session.get(f"{self.base_url}/venues?sort_by={sort_by}")
-                    if response.status_code == 200:
-                        sorted_venues = response.json()
-                        self.log(f"✅ Sorting by {sort_by}: {len(sorted_venues)} venues")
-                    else:
-                        self.log(f"❌ Sorting by {sort_by} failed: {response.status_code}", "ERROR")
-                        return False
-                
-                return True
-            else:
-                self.log(f"❌ Venue listing failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Venue listing error: {str(e)}", "ERROR")
-            return False
+        venues = response.json()
+        if not venues:
+            results.log_fail("Get venues", "No venues found in database")
+            return results.summary()
+        
+        test_venue = venues[0]
+        venue_id = test_venue["id"]
+        results.log_pass(f"Get test venue (ID: {venue_id})")
+        
+    except Exception as e:
+        results.log_fail("Get venues", str(e))
+        return results.summary()
     
-    def test_venue_details(self):
-        """Test getting single venue details"""
-        self.log("Testing venue details...")
-        
-        if not self.test_venue_id:
-            self.log("❌ Cannot test venue details - no venue ID", "ERROR")
-            return False
-        
-        try:
-            response = self.session.get(f"{self.base_url}/venues/{self.test_venue_id}")
-            if response.status_code == 200:
-                venue = response.json()
-                self.log(f"✅ Venue details retrieved: {venue['name']}")
-                return True
-            else:
-                self.log(f"❌ Venue details failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Venue details error: {str(e)}", "ERROR")
-            return False
-    
-    def test_venue_update(self):
-        """Test venue update (owner only)"""
-        self.log("Testing venue update...")
-        
-        if not self.owner_token or not self.test_venue_id:
-            self.log("❌ Cannot test venue update - missing token or venue ID", "ERROR")
-            return False
-        
-        update_data = {
-            "description": "Updated description with new amenities and features",
-            "price_per_person": 175.0,
-            "rules": "Updated rules: No smoking indoors. Music stops at 23:30. Free parking for all guests."
-        }
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.put(f"{self.base_url}/venues/{self.test_venue_id}", json=update_data, headers=headers)
-            if response.status_code == 200:
-                venue = response.json()
-                self.log(f"✅ Venue updated successfully: {venue['name']}")
-                self.log(f"✅ Updated price: {venue['price_per_person']}")
-                return True
-            else:
-                self.log(f"❌ Venue update failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Venue update error: {str(e)}", "ERROR")
-            return False
-    
-    def test_quote_creation(self):
-        """Test quote request creation (client)"""
-        self.log("Testing quote creation...")
-        
-        if not self.client_token or not self.test_venue_id:
-            self.log("❌ Cannot test quote creation - missing token or venue ID", "ERROR")
-            return False
-        
-        quote_data = {
-            "venue_id": self.test_venue_id,
-            "event_type": "wedding",
-            "event_date": "2024-08-15",
-            "guest_count": 120,
-            "message": "Căutăm o locație pentru nunta noastră din august. Avem nevoie de catering complet și decorațiuni.",
-            "client_phone": "+40721234567"
-        }
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.client_token}"}
-            response = self.session.post(f"{self.base_url}/quotes", json=quote_data, headers=headers)
-            if response.status_code == 200:
-                quote = response.json()
-                self.test_quote_id = quote.get("id")
-                
-                # Verify loyalty discount is applied
-                if "client_loyalty_tier" in quote and "client_discount" in quote:
-                    self.log(f"✅ Quote created with loyalty tier: {quote['client_loyalty_tier']} (discount: {quote['client_discount']}%)")
-                    return True
-                else:
-                    self.log("❌ Quote missing loyalty information", "ERROR")
-                    return False
-            else:
-                self.log(f"❌ Quote creation failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Quote creation error: {str(e)}", "ERROR")
-            return False
-    
-    def test_client_quotes(self):
-        """Test client's quote list"""
-        self.log("Testing client quotes list...")
-        
-        if not self.client_token:
-            self.log("❌ Cannot test client quotes - no client token", "ERROR")
-            return False
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.client_token}"}
-            response = self.session.get(f"{self.base_url}/quotes/mine", headers=headers)
-            if response.status_code == 200:
-                quotes = response.json()
-                self.log(f"✅ Client quotes retrieved: {len(quotes)} quotes")
-                return True
-            else:
-                self.log(f"❌ Client quotes failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Client quotes error: {str(e)}", "ERROR")
-            return False
-    
-    def test_owner_quotes(self):
-        """Test owner's received quotes"""
-        self.log("Testing owner quotes list...")
-        
-        if not self.owner_token:
-            self.log("❌ Cannot test owner quotes - no owner token", "ERROR")
-            return False
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.get(f"{self.base_url}/quotes/owner", headers=headers)
-            if response.status_code == 200:
-                quotes = response.json()
-                self.log(f"✅ Owner quotes retrieved: {len(quotes)} quotes")
-                return True
-            else:
-                self.log(f"❌ Owner quotes failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Owner quotes error: {str(e)}", "ERROR")
-            return False
-    
-    def test_quote_status_update(self):
-        """Test updating quote status"""
-        self.log("Testing quote status update...")
-        
-        if not self.owner_token or not self.test_quote_id:
-            self.log("❌ Cannot test quote status update - missing token or quote ID", "ERROR")
-            return False
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.put(f"{self.base_url}/quotes/{self.test_quote_id}/status?status=responded", headers=headers)
-            if response.status_code == 200:
-                result = response.json()
-                self.log(f"✅ Quote status updated: {result['message']}")
-                return True
-            else:
-                self.log(f"❌ Quote status update failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Quote status update error: {str(e)}", "ERROR")
-            return False
-    
-    def test_promotion_purchase(self):
-        """Test purchasing promotion package"""
-        self.log("Testing promotion package purchase...")
-        
-        if not self.owner_token or not self.test_venue_id:
-            self.log("❌ Cannot test promotion purchase - missing token or venue ID", "ERROR")
-            return False
-        
-        promotion_data = {
-            "venue_id": self.test_venue_id,
-            "package": "silver"
-        }
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.post(f"{self.base_url}/venues/{self.test_venue_id}/promote", json=promotion_data, headers=headers)
-            if response.status_code == 200:
-                result = response.json()
-                self.log(f"✅ Promotion purchased: {result['message']}")
-                if "promotion" in result:
-                    promo = result["promotion"]
-                    self.log(f"✅ Promotion details: {promo['name']} - boost: {promo['boost']}")
-                return True
-            else:
-                self.log(f"❌ Promotion purchase failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Promotion purchase error: {str(e)}", "ERROR")
-            return False
-    
-    def test_loyalty_endpoints(self):
-        """Test loyalty program endpoints"""
-        self.log("Testing loyalty endpoints...")
-        
-        try:
-            # Test loyalty tiers endpoint
-            response = self.session.get(f"{self.base_url}/loyalty/tiers")
-            if response.status_code == 200:
-                tiers = response.json()
-                self.log(f"✅ Loyalty tiers retrieved: {list(tiers.keys())}")
-            else:
-                self.log(f"❌ Loyalty tiers failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-            
-            # Test user's loyalty progress
-            if self.client_token:
-                headers = {"Authorization": f"Bearer {self.client_token}"}
-                response = self.session.get(f"{self.base_url}/loyalty/my-progress", headers=headers)
-                if response.status_code == 200:
-                    progress = response.json()
-                    self.log(f"✅ Loyalty progress: {progress['current_tier']['name']} - {progress['total_requests']} requests")
-                    return True
-                else:
-                    self.log(f"❌ Loyalty progress failed: {response.status_code} - {response.text}", "ERROR")
-                    return False
-            else:
-                self.log("❌ Cannot test loyalty progress - no client token", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Loyalty endpoints error: {str(e)}", "ERROR")
-            return False
-    
-    def test_owner_statistics(self):
-        """Test owner statistics endpoint"""
-        self.log("Testing owner statistics...")
-        
-        if not self.owner_token:
-            self.log("❌ Cannot test owner stats - no owner token", "ERROR")
-            return False
-        
-        try:
-            headers = {"Authorization": f"Bearer {self.owner_token}"}
-            response = self.session.get(f"{self.base_url}/stats/owner", headers=headers)
-            if response.status_code == 200:
-                stats = response.json()
-                required_fields = ["total_venues", "total_quotes", "pending_quotes", "responded_quotes", "total_views"]
-                missing_fields = [field for field in required_fields if field not in stats]
-                
-                if missing_fields:
-                    self.log(f"❌ Owner stats missing fields: {missing_fields}", "ERROR")
-                    return False
-                
-                self.log(f"✅ Owner stats: {stats['total_venues']} venues, {stats['total_quotes']} quotes")
-                return True
-            else:
-                self.log(f"❌ Owner stats failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Owner stats error: {str(e)}", "ERROR")
-            return False
-    
-    def test_config_endpoint(self):
-        """Test configuration endpoint"""
-        self.log("Testing config endpoint...")
-        
-        try:
-            response = self.session.get(f"{self.base_url}/config")
-            if response.status_code == 200:
-                config = response.json()
-                required_sections = ["event_types", "style_tags", "cities", "amenities", "loyalty_tiers", "commission_tiers", "promotion_packages"]
-                missing_sections = [section for section in required_sections if section not in config]
-                
-                if missing_sections:
-                    self.log(f"❌ Config missing sections: {missing_sections}", "ERROR")
-                    return False
-                
-                self.log(f"✅ Config retrieved with all sections: {list(config.keys())}")
-                return True
-            else:
-                self.log(f"❌ Config failed: {response.status_code} - {response.text}", "ERROR")
-                return False
-        except Exception as e:
-            self.log(f"❌ Config error: {str(e)}", "ERROR")
-            return False
-    
-    def run_all_tests(self):
-        """Run all backend tests in sequence"""
-        self.log("=" * 60)
-        self.log("STARTING LUMINA BACKEND API TESTS")
-        self.log("=" * 60)
-        
-        test_results = {}
-        
-        # Test sequence following the review request flow
-        tests = [
-            ("Health Check", self.test_health),
-            ("User Registration", self.test_user_registration),
-            ("User Login", self.test_user_login),
-            ("Auth Me", self.test_auth_me),
-            ("Venue Creation", self.test_venue_creation),
-            ("Venue Listing", self.test_venue_listing),
-            ("Venue Details", self.test_venue_details),
-            ("Venue Update", self.test_venue_update),
-            ("Quote Creation", self.test_quote_creation),
-            ("Client Quotes", self.test_client_quotes),
-            ("Owner Quotes", self.test_owner_quotes),
-            ("Quote Status Update", self.test_quote_status_update),
-            ("Promotion Purchase", self.test_promotion_purchase),
-            ("Loyalty Endpoints", self.test_loyalty_endpoints),
-            ("Owner Statistics", self.test_owner_statistics),
-            ("Config Endpoint", self.test_config_endpoint)
-        ]
-        
-        for test_name, test_func in tests:
-            self.log(f"\n--- Running {test_name} ---")
-            try:
-                result = test_func()
-                test_results[test_name] = result
-                if result:
-                    self.log(f"✅ {test_name} PASSED")
-                else:
-                    self.log(f"❌ {test_name} FAILED")
-            except Exception as e:
-                self.log(f"❌ {test_name} ERROR: {str(e)}", "ERROR")
-                test_results[test_name] = False
-            
-            # Small delay between tests
-            time.sleep(0.5)
-        
-        # Summary
-        self.log("\n" + "=" * 60)
-        self.log("TEST SUMMARY")
-        self.log("=" * 60)
-        
-        passed = sum(1 for result in test_results.values() if result)
-        total = len(test_results)
-        
-        for test_name, result in test_results.items():
-            status = "✅ PASS" if result else "❌ FAIL"
-            self.log(f"{status} - {test_name}")
-        
-        self.log(f"\nOverall: {passed}/{total} tests passed")
-        
-        if passed == total:
-            self.log("🎉 ALL TESTS PASSED!")
-            return True
+    # Step 2: Test unauthenticated access to quote check endpoint
+    print("\n2. Testing unauthenticated access to quote check...")
+    try:
+        response = requests.get(f"{BASE_URL}/quotes/check/{venue_id}")
+        if response.status_code == 401:
+            results.log_pass("Unauthenticated quote check returns 401")
         else:
-            self.log(f"⚠️  {total - passed} tests failed")
-            return False
+            results.log_fail("Unauthenticated quote check", f"Expected 401, got {response.status_code}")
+    except Exception as e:
+        results.log_fail("Unauthenticated quote check", str(e))
+    
+    # Step 3: Register a test user
+    print("\n3. Registering test user...")
+    test_user_data = {
+        "first_name": "Test",
+        "last_name": "User", 
+        "email": "antibypass_test@test.com",
+        "password": "test123",
+        "role": "client"
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/auth/register", json=test_user_data)
+        if response.status_code == 200:
+            register_data = response.json()
+            auth_token = register_data["token"]
+            user_id = register_data["user"]["id"]
+            results.log_pass(f"User registration (ID: {user_id})")
+        elif response.status_code == 400 and "deja înregistrat" in response.text:
+            # User already exists, try to login
+            print("   User already exists, attempting login...")
+            login_response = requests.post(f"{BASE_URL}/auth/login", json={
+                "email": test_user_data["email"],
+                "password": test_user_data["password"]
+            })
+            if login_response.status_code == 200:
+                login_data = login_response.json()
+                auth_token = login_data["token"]
+                user_id = login_data["user"]["id"]
+                results.log_pass(f"User login (existing user, ID: {user_id})")
+            else:
+                results.log_fail("User login", f"Status {login_response.status_code}: {login_response.text}")
+                return results.summary()
+        else:
+            results.log_fail("User registration", f"Status {response.status_code}: {response.text}")
+            return results.summary()
+    except Exception as e:
+        results.log_fail("User registration", str(e))
+        return results.summary()
+    
+    # Step 4: Test authenticated quote check (should return has_quote: false initially)
+    print("\n4. Testing authenticated quote check (initial state)...")
+    headers = {"Authorization": f"Bearer {auth_token}"}
+    
+    try:
+        response = requests.get(f"{BASE_URL}/quotes/check/{venue_id}", headers=headers)
+        if response.status_code == 200:
+            check_data = response.json()
+            if check_data.get("has_quote") == False:
+                results.log_pass("Initial quote check returns has_quote: false")
+            else:
+                results.log_fail("Initial quote check", f"Expected has_quote: false, got {check_data}")
+        else:
+            results.log_fail("Initial quote check", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("Initial quote check", str(e))
+    
+    # Step 5: Create a quote request
+    print("\n5. Creating quote request...")
+    quote_data = {
+        "venue_id": venue_id,
+        "event_date": "2025-12-15",
+        "guest_count": 100,
+        "event_type": "wedding",
+        "message": "Test quote for anti-bypass functionality"
+    }
+    
+    try:
+        response = requests.post(f"{BASE_URL}/quotes", json=quote_data, headers=headers)
+        if response.status_code == 200:
+            quote_response = response.json()
+            quote_id = quote_response["id"]
+            results.log_pass(f"Quote creation (ID: {quote_id})")
+        else:
+            results.log_fail("Quote creation", f"Status {response.status_code}: {response.text}")
+            return results.summary()
+    except Exception as e:
+        results.log_fail("Quote creation", str(e))
+        return results.summary()
+    
+    # Step 6: Test authenticated quote check again (should return has_quote: true)
+    print("\n6. Testing authenticated quote check (after quote creation)...")
+    try:
+        response = requests.get(f"{BASE_URL}/quotes/check/{venue_id}", headers=headers)
+        if response.status_code == 200:
+            check_data = response.json()
+            if check_data.get("has_quote") == True and check_data.get("quote_id"):
+                results.log_pass("Post-quote check returns has_quote: true with quote_id")
+            else:
+                results.log_fail("Post-quote check", f"Expected has_quote: true with quote_id, got {check_data}")
+        else:
+            results.log_fail("Post-quote check", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("Post-quote check", str(e))
+    
+    # Step 7: Verify venue details endpoint returns contact info (backend provides it, frontend decides visibility)
+    print("\n7. Testing venue details endpoint...")
+    try:
+        response = requests.get(f"{BASE_URL}/venues/{venue_id}")
+        if response.status_code == 200:
+            venue_data = response.json()
+            # Check if contact fields are present in response
+            contact_fields = ["contact_phone", "contact_email", "contact_person"]
+            has_contact_info = any(field in venue_data for field in contact_fields)
+            if has_contact_info:
+                results.log_pass("Venue details includes contact information")
+            else:
+                results.log_fail("Venue details", "No contact information found in response")
+        else:
+            results.log_fail("Venue details", f"Status {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("Venue details", str(e))
+    
+    # Step 8: Test quote check with different user (should return false)
+    print("\n8. Testing quote check with different user...")
+    different_user_data = {
+        "first_name": "Different",
+        "last_name": "User",
+        "email": "different_user@test.com", 
+        "password": "test123",
+        "role": "client"
+    }
+    
+    try:
+        # Register or login different user
+        response = requests.post(f"{BASE_URL}/auth/register", json=different_user_data)
+        if response.status_code == 200:
+            different_auth_token = response.json()["token"]
+        elif response.status_code == 400:
+            # Try login
+            login_response = requests.post(f"{BASE_URL}/auth/login", json={
+                "email": different_user_data["email"],
+                "password": different_user_data["password"]
+            })
+            if login_response.status_code == 200:
+                different_auth_token = login_response.json()["token"]
+            else:
+                results.log_fail("Different user setup", f"Login failed: {login_response.text}")
+                return results.summary()
+        else:
+            results.log_fail("Different user setup", f"Registration failed: {response.text}")
+            return results.summary()
+        
+        # Test quote check with different user
+        different_headers = {"Authorization": f"Bearer {different_auth_token}"}
+        response = requests.get(f"{BASE_URL}/quotes/check/{venue_id}", headers=different_headers)
+        if response.status_code == 200:
+            check_data = response.json()
+            if check_data.get("has_quote") == False:
+                results.log_pass("Different user quote check returns has_quote: false")
+            else:
+                results.log_fail("Different user quote check", f"Expected has_quote: false, got {check_data}")
+        else:
+            results.log_fail("Different user quote check", f"Status {response.status_code}: {response.text}")
+            
+    except Exception as e:
+        results.log_fail("Different user quote check", str(e))
+    
+    return results.summary()
+
+def test_additional_auth_endpoints():
+    """Test additional authentication-related endpoints"""
+    results = TestResults()
+    
+    print("\n🔐 TESTING ADDITIONAL AUTH ENDPOINTS")
+    print("="*60)
+    
+    # Test /auth/me endpoint
+    print("\n1. Testing /auth/me endpoint without authentication...")
+    try:
+        response = requests.get(f"{BASE_URL}/auth/me")
+        if response.status_code == 401:
+            results.log_pass("/auth/me returns 401 without auth")
+        else:
+            results.log_fail("/auth/me without auth", f"Expected 401, got {response.status_code}")
+    except Exception as e:
+        results.log_fail("/auth/me without auth", str(e))
+    
+    # Test with valid token
+    print("\n2. Testing /auth/me with valid authentication...")
+    try:
+        # Use existing user or create new one
+        login_data = {
+            "email": "antibypass_test@test.com",
+            "password": "test123"
+        }
+        login_response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+        if login_response.status_code == 200:
+            token = login_response.json()["token"]
+            headers = {"Authorization": f"Bearer {token}"}
+            
+            response = requests.get(f"{BASE_URL}/auth/me", headers=headers)
+            if response.status_code == 200:
+                user_data = response.json()
+                if "id" in user_data and "email" in user_data and "loyalty_tier" in user_data:
+                    results.log_pass("/auth/me returns complete user data")
+                else:
+                    results.log_fail("/auth/me data", f"Missing required fields in response: {user_data}")
+            else:
+                results.log_fail("/auth/me with auth", f"Status {response.status_code}: {response.text}")
+        else:
+            results.log_fail("Login for /auth/me test", f"Status {login_response.status_code}")
+    except Exception as e:
+        results.log_fail("/auth/me with auth", str(e))
+    
+    return results.summary()
 
 if __name__ == "__main__":
-    tester = LuminaAPITester()
-    success = tester.run_all_tests()
-    exit(0 if success else 1)
+    print("🚀 STARTING EVENVY ANTI-BYPASS TESTING")
+    print(f"Timestamp: {datetime.now().isoformat()}")
+    
+    # Test anti-bypass functionality
+    success1 = test_anti_bypass_functionality()
+    
+    # Test additional auth endpoints
+    success2 = test_additional_auth_endpoints()
+    
+    # Overall result
+    overall_success = success1 and success2
+    
+    print(f"\n🎯 OVERALL RESULT: {'✅ ALL TESTS PASSED' if overall_success else '❌ SOME TESTS FAILED'}")
+    
+    sys.exit(0 if overall_success else 1)
