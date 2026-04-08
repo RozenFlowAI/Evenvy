@@ -485,6 +485,13 @@ async def update_quote_status(quote_id: str, status: str, user=Depends(get_curre
     await db.quotes.update_one({"id": quote_id}, {"$set": {"status": status, "updated_at": datetime.now(timezone.utc).isoformat()}})
     return {"message": f"Cerere actualizată: {status}"}
 
+# ANTI-BYPASS: Check if user has sent a quote for this venue
+@api_router.get("/quotes/check/{venue_id}")
+async def check_user_quote(venue_id: str, user=Depends(get_current_user)):
+    """Check if the current user has sent a quote request for this venue"""
+    quote = await db.quotes.find_one({"venue_id": venue_id, "client_id": user["id"]})
+    return {"has_quote": quote is not None, "quote_id": quote["id"] if quote else None}
+
 # ─── Review Routes ───
 
 @api_router.post("/reviews")

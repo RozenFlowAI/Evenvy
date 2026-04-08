@@ -17,20 +17,33 @@ const { width } = Dimensions.get('window');
 export default function VenueDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { theme } = useTheme();
   const c = theme.colors;
   const [venue, setVenue] = useState<Venue | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImg, setActiveImg] = useState(0);
+  // ANTI-BYPASS: Track if user has sent a quote request
+  const [quoteSent, setQuoteSent] = useState(false);
+  const [checkingQuote, setCheckingQuote] = useState(true);
 
   useEffect(() => {
     Promise.all([apiCall(`/venues/${id}`), apiCall(`/reviews/venue/${id}`)])
       .then(([v, r]) => { setVenue(v); setReviews(r); })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [id]);
+    
+    // Check if user already sent a quote for this venue
+    if (token) {
+      apiCall(`/quotes/check/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then((data) => setQuoteSent(data.has_quote))
+        .catch(() => setQuoteSent(false))
+        .finally(() => setCheckingQuote(false));
+    } else {
+      setCheckingQuote(false);
+    }
+  }, [id, token]);
 
   if (loading || !venue) {
     return (
@@ -193,30 +206,42 @@ export default function VenueDetailScreen() {
             </View>
           )}
 
-          {/* Contact */}
+          {/* Contact - ANTI-BYPASS: Hidden until quote sent */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Contact direct</Text>
             <View style={[styles.contactCard, { backgroundColor: c.surface, borderColor: c.border }]}>
-              {venue.contact_person ? (
-                <View style={styles.contactRow}>
-                  <Ionicons name="person" size={16} color={c.primary} />
-                  <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_person}</Text>
+              {quoteSent ? (
+                <>
+                  {venue.contact_person ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="person" size={16} color={c.primary} />
+                      <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_person}</Text>
+                    </View>
+                  ) : null}
+                  {venue.contact_phone ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="call" size={16} color={c.primary} />
+                      <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_phone}</Text>
+                    </View>
+                  ) : null}
+                  {venue.contact_email ? (
+                    <View style={styles.contactRow}>
+                      <Ionicons name="mail" size={16} color={c.primary} />
+                      <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_email}</Text>
+                    </View>
+                  ) : null}
+                  {!venue.contact_person && !venue.contact_phone && !venue.contact_email && (
+                    <Text style={[styles.contactText, { color: c.textSecondary }]}>Proprietarul te va contacta direct</Text>
+                  )}
+                </>
+              ) : (
+                <View style={styles.contactLocked}>
+                  <Ionicons name="lock-closed" size={32} color={c.textTertiary} />
+                  <Text style={[styles.contactLockedTitle, { color: c.textSecondary }]}>Contact ascuns</Text>
+                  <Text style={[styles.contactLockedText, { color: c.textTertiary }]}>
+                    Trimite o cerere de ofertă pentru a vedea datele de contact
+                  </Text>
                 </View>
-              ) : null}
-              {venue.contact_phone ? (
-                <View style={styles.contactRow}>
-                  <Ionicons name="call" size={16} color={c.primary} />
-                  <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_phone}</Text>
-                </View>
-              ) : null}
-              {venue.contact_email ? (
-                <View style={styles.contactRow}>
-                  <Ionicons name="mail" size={16} color={c.primary} />
-                  <Text style={[styles.contactText, { color: c.textSecondary }]}>{venue.contact_email}</Text>
-                </View>
-              ) : null}
-              {!venue.contact_person && !venue.contact_phone && !venue.contact_email && (
-                <Text style={[styles.contactText, { color: c.textSecondary }]}>Contactează prin cerere de ofertă</Text>
               )}
             </View>
           </View>
@@ -381,6 +406,14 @@ const styles = StyleSheet.create({
   },
   contactRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   contactText: { fontSize: 16 },
+  // ANTI-BYPASS: Locked contact styles
+  contactLocked: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  contactLockedTitle: { fontSize: 16, fontWeight: '600' },
+  contactLockedText: { fontSize: 14, textAlign: 'center' },
   reviewCard: {
     borderRadius: 12,
     padding: 16,
