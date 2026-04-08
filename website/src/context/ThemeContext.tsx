@@ -32,17 +32,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('evenvy_theme', newTheme);
   };
 
-  if (!mounted) {
-    return <div style={{ background: darkTheme.colors.background, minHeight: '100vh' }}>{children}</div>;
-  }
-
+  // Always provide context, even before mount
   return (
     <ThemeContext.Provider value={{ theme, themeName, toggleTheme, isDark: themeName === 'dark' }}>
       <div style={{ 
         background: theme.colors.background, 
         color: theme.colors.textPrimary,
         minHeight: '100vh',
-        transition: 'background 0.3s, color 0.3s'
+        transition: mounted ? 'background 0.3s, color 0.3s' : 'none'
       }}>
         {children}
       </div>
@@ -53,7 +50,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
+    // Return default dark theme if context not ready
+    return {
+      theme: darkTheme,
+      themeName: 'dark' as ThemeName,
+      toggleTheme: () => {},
+      isDark: true,
+    };
   }
   return context;
 }
