@@ -26,7 +26,7 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI(title="Evenvy - Marketplace Locații Evenimente")
 api_router = APIRouter(prefix="/api")
 
-JWT_SECRET = "lumina-event-venue-secret-key-2024"
+JWT_SECRET = os.environ.get("JWT_SECRET", "change-this-in-production")
 JWT_ALGORITHM = "HS256"
 security = HTTPBearer(auto_error=False)
 
