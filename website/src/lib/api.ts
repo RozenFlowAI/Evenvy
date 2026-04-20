@@ -1,5 +1,5 @@
 // API utility functions
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://party-place-finder.preview.emergentagent.com/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://evenvy.onrender.com/api';
 
 export const EVENT_TYPE_LABELS: Record<string, string> = {
   wedding: 'Nuntă',
