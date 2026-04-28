@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
-    const data = await apiCall('/login', {
+    const data = await apiCall('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (formData: any) => {
-    const data = await apiCall('/register', {
+    const data = await apiCall('/auth/register', {
       method: 'POST',
       body: JSON.stringify(formData),
     });
