@@ -655,12 +655,24 @@ async def get_uploaded_file(filename: str):
 
 app.include_router(api_router)
 
+ALLOWED_ORIGINS = [
+    "https://evenvy.vercel.app",
+    "https://evenvy.ro",
+    "https://www.evenvy.ro",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8081",
+]
+
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=r"https://evenvy(-[a-z0-9-]+)?\.vercel\.app",
     allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["Content-Length", "Content-Type"],
+    max_age=600,
 )
 
 @app.on_event("startup")
