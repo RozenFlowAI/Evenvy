@@ -57,7 +57,7 @@ export default function HomePage() {
             Găsește locația perfectă pentru <span style={{ color: c.primary }}>evenimentul tău</span>
           </h1>
           <p style={{ fontSize: 20, color: c.textSecondary, marginBottom: 32 }}>
-            Marketplace cu sute de locații pentru nunți, botezuri, petreceri corporate și multe altele.
+            Marketplace pentru locații de nunți, botezuri, petreceri corporate și multe altele.
           </p>
           <Link
             href="/search"
