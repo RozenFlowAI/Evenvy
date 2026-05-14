@@ -99,7 +99,7 @@ export default function VenueDetailPage() {
     );
   }
 
-  const canSeeContact = quoteSent;
+  const canSeeContact = (venue as any)._contact_visible === true;
   const images = venue.images && venue.images.length > 0 ? venue.images : [];
 
   return (
@@ -351,12 +351,14 @@ export default function VenueDetailPage() {
                   )}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <span style={{ fontSize: 32 }}>🔒</span>
-                  <p style={{ color: c.textSecondary, marginTop: 8 }}>
-                    Trimite o cerere de ofertă pentru a vedea datele de contact
-                  </p>
-                </div>
+               <div style={{ textAlign: 'center', padding: '16px 0' }}>
+  <span style={{ fontSize: 32 }}>🔒</span>
+  <p style={{ color: c.textSecondary, marginTop: 8, lineHeight: 1.6 }}>
+    {quoteSent
+      ? 'Cererea ta a fost trimisă. Datele de contact vor apărea aici după ce proprietarul acceptă cererea.'
+      : 'Trimite o cerere de ofertă. După ce proprietarul o acceptă, vei vedea datele de contact aici.'}
+  </p>
+</div>
               )}
             </div>
           </div>
@@ -371,9 +373,9 @@ export default function VenueDetailPage() {
                   <p style={{ color: c.textSecondary, marginTop: 8 }}>
                     Proprietarul va fi notificat și te va contacta cu o ofertă personalizată.
                   </p>
-                  <p style={{ color: c.success, marginTop: 16, fontWeight: 500 }}>
-                    Acum poți vedea datele de contact! 👆
-                  </p>
+                 <p style={{ color: c.warning, marginTop: 16, fontWeight: 500, fontSize: 14, lineHeight: 1.5 }}>
+  ⏳ Așteaptă răspunsul proprietarului. Vei primi email când acceptă cererea, iar datele de contact vor deveni vizibile.
+</p>
                 </div>
               ) : showQuoteForm ? (
                 <form onSubmit={handleSubmitQuote}>
