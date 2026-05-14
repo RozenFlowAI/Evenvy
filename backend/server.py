@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, File, UploadFile
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Query, File, UploadFile, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
@@ -323,10 +323,43 @@ async def my_venues(user=Depends(get_current_user)):
     return venues
 
 @api_router.get("/venues/{venue_id}")
-async def get_venue(venue_id: str):
+async def get_venue(venue_id: str, request: Request):
     venue = await db.venues.find_one({"id": venue_id}, {"_id": 0})
     if not venue:
         raise HTTPException(status_code=404, detail="Locația nu a fost găsită")
+
+    # ANTI-BYPASS: Ascundem datele de contact până când proprietarul acceptă cererea
+    show_contact = False
+
+    # Verificăm dacă userul e logat și are quote acceptat pentru această locație
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            user_id = payload.get("user_id")
+
+            # Owner-ul vede mereu propriile date
+            if user_id == venue.get("owner_id"):
+                show_contact = True
+            else:
+                # Clientul vede contactul DOAR dacă are cerere acceptată (responded)
+                accepted_quote = await db.quotes.find_one({
+                    "venue_id": venue_id,
+                    "client_id": user_id,
+                    "status": "responded"
+                })
+                if accepted_quote:
+                    show_contact = True
+        except Exception:
+            pass
+
+    if not show_contact:
+        venue["contact_person"] = None
+        venue["contact_phone"] = None
+        venue["contact_email"] = None
+
+    venue["_contact_visible"] = show_contact
     return venue
 
 @api_router.post("/venues")
