@@ -117,7 +117,7 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}
             >
-              Scrie-ne pe WhatsApp →
+              Scrie-ne pe WhatsApp {'→'}
             </a>
             <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 4 }}>Răspuns rapid în timpul programului</div>
           </div>
