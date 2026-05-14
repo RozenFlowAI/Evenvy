@@ -45,6 +45,9 @@ export default function Navbar() {
             <Link href="/dashboard" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
               Dashboard
             </Link>
+      <Link href="/contact" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14 }}>
+  Contact
+</Link>
           )}
           <button
             onClick={toggleTheme}
@@ -139,6 +142,9 @@ export default function Navbar() {
             <Link href="/dashboard" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
               Dashboard
             </Link>
+          <Link href="/contact" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '14px 0', borderBottom: `1px solid ${c.border}` }}>
+  Contact
+</Link>
           )}
           {user && (
             <Link href="/my-quotes" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
