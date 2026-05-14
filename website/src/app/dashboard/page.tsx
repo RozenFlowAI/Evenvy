@@ -26,12 +26,14 @@ export default function DashboardPage() {
   const c = theme.colors;
   const router = useRouter();
   const { user, token, loading: authLoading } = useAuth();
-  
+
   const [stats, setStats] = useState<Stats | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'quotes' | 'venues'>('quotes');
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'owner')) {
@@ -68,6 +70,26 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteVenue = async (venueId: string) => {
+    if (!token) return;
+    setDeleting(true);
+    try {
+      await apiCall(`/venues/${venueId}`, {
+        method: 'DELETE',
+        headers: authHeaders(token),
+      });
+      setVenues(venues.filter(v => v.id !== venueId));
+      setDeleteConfirm(null);
+      if (stats) {
+        setStats({ ...stats, total_venues: stats.total_venues - 1 });
+      }
+    } catch (e: any) {
+      alert(`Eroare la ștergere: ${e.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -76,11 +98,13 @@ export default function DashboardPage() {
     );
   }
 
+  const venueToDelete = venues.find(v => v.id === deleteConfirm);
+
   return (
-    <div style={{ minHeight: '100vh', padding: '32px 24px' }}>
+    <div style={{ minHeight: '100vh', padding: '32px 16px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, color: c.textPrimary }}>Dashboard Proprietar</h1>
           <Link
             href="/dashboard/add-venue"
@@ -101,7 +125,7 @@ export default function DashboardPage() {
 
         {/* Stats */}
         {stats && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 32 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16, marginBottom: 32 }}>
             <div style={{ background: `${c.primary}15`, borderRadius: 12, padding: 24, textAlign: 'center' }}>
               <div style={{ fontSize: 36, fontWeight: 700, color: c.textPrimary }}>{stats.total_venues}</div>
               <div style={{ color: c.textSecondary, marginTop: 4 }}>Locații</div>
@@ -136,7 +160,7 @@ export default function DashboardPage() {
               cursor: 'pointer',
             }}
           >
-            Cereri de ofertă ({quotes.length})
+            Cereri ({quotes.length})
           </button>
           <button
             onClick={() => setActiveTab('venues')}
@@ -151,7 +175,7 @@ export default function DashboardPage() {
               cursor: 'pointer',
             }}
           >
-            Locațiile mele ({venues.length})
+            Locații ({venues.length})
           </button>
         </div>
 
@@ -170,7 +194,7 @@ export default function DashboardPage() {
                   const status = STATUS_CONFIG[quote.status] || STATUS_CONFIG.pending;
                   return (
                     <div key={quote.id} style={{ background: c.surface, borderRadius: 12, border: `1px solid ${c.border}`, padding: 20 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                         <div>
                           <div style={{ fontWeight: 600, color: c.textPrimary, fontSize: 16 }}>{(quote as any).client_name || 'Client'}</div>
                           <div style={{ color: c.primary, fontSize: 14, marginTop: 4 }}>{quote.venue_name}</div>
@@ -198,16 +222,16 @@ export default function DashboardPage() {
                         <p style={{ color: c.textSecondary, fontSize: 14, fontStyle: 'italic', marginBottom: 16 }}>"{quote.message}"</p>
                       )}
                       {quote.status === 'pending' && (
-                        <div style={{ display: 'flex', gap: 12 }}>
+                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                           <button
                             onClick={() => updateQuoteStatus(quote.id, 'responded')}
-                            style={{ flex: 1, padding: 12, borderRadius: 999, border: 'none', background: c.success, color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+                            style={{ flex: 1, minWidth: 130, padding: 12, borderRadius: 999, border: 'none', background: c.success, color: '#fff', fontWeight: 600, cursor: 'pointer' }}
                           >
-                            ✓ Am răspuns
+                            ✓ Acceptă
                           </button>
                           <button
                             onClick={() => updateQuoteStatus(quote.id, 'rejected')}
-                            style={{ flex: 1, padding: 12, borderRadius: 999, border: `1px solid ${c.error}`, background: 'transparent', color: c.error, fontWeight: 600, cursor: 'pointer' }}
+                            style={{ flex: 1, minWidth: 130, padding: 12, borderRadius: 999, border: `1px solid ${c.error}`, background: 'transparent', color: c.error, fontWeight: 600, cursor: 'pointer' }}
                           >
                             ✕ Refuză
                           </button>
@@ -233,13 +257,37 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
                 {venues.map((venue) => (
-                  <div key={venue.id} style={{ background: c.surface, borderRadius: 12, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
-                    <div style={{ height: 140, background: c.surfaceHighlight }}>
+                  <div key={venue.id} style={{ background: c.surface, borderRadius: 12, border: `1px solid ${c.border}`, overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: 140, background: c.surfaceHighlight, position: 'relative' }}>
                       {venue.images?.[0] && (
                         <img src={venue.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       )}
+                      {/* Buton ștergere */}
+                      <button
+                        onClick={() => setDeleteConfirm(venue.id)}
+                        title="Șterge locația"
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
+                          border: 'none',
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#fff',
+                          cursor: 'pointer',
+                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backdropFilter: 'blur(4px)',
+                        }}
+                      >
+                        🗑
+                      </button>
                     </div>
                     <div style={{ padding: 16 }}>
                       <Link href={`/venue/${venue.id}`} style={{ textDecoration: 'none' }}>
@@ -262,6 +310,85 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL CONFIRMARE ȘTERGERE */}
+      {deleteConfirm && venueToDelete && (
+        <div
+          onClick={() => !deleting && setDeleteConfirm(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: c.surface,
+              borderRadius: 16,
+              padding: 28,
+              maxWidth: 460,
+              width: '100%',
+              border: `1px solid ${c.border}`,
+            }}
+          >
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: 48 }}>⚠️</span>
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 700, color: c.textPrimary, marginBottom: 12, textAlign: 'center' }}>
+              Ești sigur că vrei să ștergi?
+            </h2>
+            <p style={{ color: c.textSecondary, marginBottom: 20, textAlign: 'center', lineHeight: 1.6 }}>
+              Vei șterge permanent locația <strong style={{ color: c.textPrimary }}>{venueToDelete.name}</strong> din {venueToDelete.city}.
+            </p>
+            <div style={{ background: `${c.error}15`, border: `1px solid ${c.error}40`, borderRadius: 10, padding: 14, marginBottom: 24, fontSize: 14, color: c.textSecondary }}>
+              ⚠️ Această acțiune <strong style={{ color: c.error }}>nu poate fi anulată</strong>. Toate cererile, recenziile și pozele asociate vor fi pierdute.
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  minWidth: 130,
+                  padding: 14,
+                  borderRadius: 999,
+                  border: `1px solid ${c.border}`,
+                  background: 'transparent',
+                  color: c.textPrimary,
+                  fontWeight: 600,
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                Anulează
+              </button>
+              <button
+                onClick={() => handleDeleteVenue(venueToDelete.id)}
+                disabled={deleting}
+                style={{
+                  flex: 1,
+                  minWidth: 130,
+                  padding: 14,
+                  borderRadius: 999,
+                  border: 'none',
+                  background: c.error,
+                  color: '#fff',
+                  fontWeight: 600,
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.7 : 1,
+                }}
+              >
+                {deleting ? 'Se șterge...' : '🗑 Șterge definitiv'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
