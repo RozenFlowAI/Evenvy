@@ -5,6 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { apiCall, Venue, EVENT_TYPE_LABELS } from '@/lib/api';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Keyboard, Zoom } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/zoom';
 
 export default function VenueDetailPage() {
   const { theme } = useTheme();
@@ -12,10 +18,11 @@ export default function VenueDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user, token } = useAuth();
-  
+
   const [venue, setVenue] = useState<Venue | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [quoteForm, setQuoteForm] = useState({
     event_date: '',
@@ -32,6 +39,12 @@ export default function VenueDetailPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Blochează scroll-ul când lightbox e deschis
+  useEffect(() => {
+    document.body.style.overflow = lightboxOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [lightboxOpen]);
 
   const handleSubmitQuote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +74,11 @@ export default function VenueDetailPage() {
     }
   };
 
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -81,45 +99,51 @@ export default function VenueDetailPage() {
     );
   }
 
-  // ANTI-BYPASS: Contact info hidden until quote sent
   const canSeeContact = quoteSent;
+  const images = venue.images && venue.images.length > 0 ? venue.images : [];
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      {/* Image Gallery */}
-      <div style={{ position: 'relative', height: 400, background: c.surface }}>
-        {venue.images && venue.images.length > 0 ? (
-          <>
-            <img
-              src={venue.images[activeImage]}
-              alt={venue.name}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-            {venue.images.length > 1 && (
-              <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
-                {venue.images.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveImage(i)}
-                    style={{
-                      width: i === activeImage ? 24 : 10,
-                      height: 10,
-                      borderRadius: 5,
-                      border: 'none',
-                      background: i === activeImage ? c.primary : 'rgba(255,255,255,0.5)',
-                      cursor: 'pointer',
-                      transition: 'width 0.2s',
-                    }}
+      {/* Image Gallery with Swiper */}
+      <div style={{ position: 'relative', height: 480, background: c.surface }}>
+        {images.length > 0 ? (
+          <Swiper
+            modules={[Navigation, Pagination, Keyboard]}
+            navigation
+            pagination={{ clickable: true, dynamicBullets: true }}
+            keyboard={{ enabled: true }}
+            loop={images.length > 1}
+            spaceBetween={0}
+            slidesPerView={1}
+            style={{
+              width: '100%',
+              height: '100%',
+              ['--swiper-navigation-color' as any]: '#fff',
+              ['--swiper-pagination-color' as any]: c.primary,
+              ['--swiper-navigation-size' as any]: '28px',
+            }}
+          >
+            {images.map((src, idx) => (
+              <SwiperSlide key={idx}>
+                <div
+                  onClick={() => openLightbox(idx)}
+                  style={{ width: '100%', height: '100%', cursor: 'zoom-in' }}
+                >
+                  <img
+                    src={src}
+                    alt={`${venue.name} - poza ${idx + 1}`}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                ))}
-              </div>
-            )}
-          </>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 64, color: c.textTertiary }}>🏢</span>
           </div>
         )}
+
         {/* Back button */}
         <button
           onClick={() => router.back()}
@@ -130,20 +154,107 @@ export default function VenueDetailPage() {
             width: 44,
             height: 44,
             borderRadius: 22,
-            background: 'rgba(0,0,0,0.5)',
+            background: 'rgba(0,0,0,0.6)',
             border: 'none',
             color: '#fff',
             cursor: 'pointer',
             fontSize: 20,
+            zIndex: 10,
+            backdropFilter: 'blur(4px)',
           }}
         >
           ←
         </button>
+
+        {/* Counter */}
+        {images.length > 1 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              background: 'rgba(0,0,0,0.6)',
+              color: '#fff',
+              padding: '6px 14px',
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 500,
+              zIndex: 10,
+              backdropFilter: 'blur(4px)',
+            }}
+          >
+            📷 {images.length} {images.length === 1 ? 'poză' : 'poze'}
+          </div>
+        )}
       </div>
+
+      {/* LIGHTBOX FULLSCREEN */}
+      {lightboxOpen && images.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.95)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 24,
+              zIndex: 1001,
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            ×
+          </button>
+
+          <Swiper
+            modules={[Navigation, Pagination, Keyboard, Zoom]}
+            navigation
+            pagination={{ clickable: true }}
+            keyboard={{ enabled: true }}
+            zoom={{ maxRatio: 3 }}
+            loop={images.length > 1}
+            initialSlide={lightboxIndex}
+            style={{
+              width: '100%',
+              height: '100%',
+              ['--swiper-navigation-color' as any]: '#fff',
+              ['--swiper-pagination-color' as any]: '#fff',
+            }}
+          >
+            {images.map((src, idx) => (
+              <SwiperSlide key={idx}>
+                <div className="swiper-zoom-container" style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src={src}
+                    alt={`${venue.name} - poza ${idx + 1}`}
+                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  />
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      )}
 
       {/* Content */}
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '32px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 48 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: 48 }} className="venue-grid">
           {/* Left - Info */}
           <div>
             <h1 style={{ fontSize: 32, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>{venue.name}</h1>
@@ -153,7 +264,7 @@ export default function VenueDetailPage() {
             </div>
 
             {/* Stats */}
-            <div style={{ display: 'flex', gap: 32, padding: '20px 0', borderTop: `1px solid ${c.border}`, borderBottom: `1px solid ${c.border}`, marginBottom: 32 }}>
+            <div style={{ display: 'flex', gap: 32, padding: '20px 0', borderTop: `1px solid ${c.border}`, borderBottom: `1px solid ${c.border}`, marginBottom: 32, flexWrap: 'wrap' }}>
               <div>
                 <div style={{ fontSize: 24, fontWeight: 600, color: c.textPrimary }}>{venue.capacity_min}-{venue.capacity_max}</div>
                 <div style={{ fontSize: 14, color: c.textSecondary }}>persoane</div>
@@ -208,7 +319,7 @@ export default function VenueDetailPage() {
             {venue.amenities && venue.amenities.length > 0 && (
               <div style={{ marginBottom: 32 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 600, color: c.textPrimary, marginBottom: 12 }}>Facilități</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
                   {venue.amenities.map((a) => (
                     <div key={a} style={{ display: 'flex', alignItems: 'center', gap: 8, color: c.textSecondary }}>
                       <span style={{ color: c.success }}>✓</span> {a}
@@ -218,7 +329,7 @@ export default function VenueDetailPage() {
               </div>
             )}
 
-            {/* Contact - HIDDEN until quote sent (ANTI-BYPASS) */}
+            {/* Contact - HIDDEN until quote sent */}
             <div style={{ marginBottom: 32, padding: 20, background: c.surface, borderRadius: 12, border: `1px solid ${c.border}` }}>
               <h3 style={{ fontSize: 18, fontWeight: 600, color: c.textPrimary, marginBottom: 12 }}>Contact</h3>
               {canSeeContact ? (
@@ -267,7 +378,7 @@ export default function VenueDetailPage() {
               ) : showQuoteForm ? (
                 <form onSubmit={handleSubmitQuote}>
                   <h3 style={{ fontSize: 20, fontWeight: 600, color: c.textPrimary, marginBottom: 20 }}>Cere ofertă de preț</h3>
-                  
+
                   <div style={{ marginBottom: 16 }}>
                     <label style={{ display: 'block', fontSize: 14, color: c.textSecondary, marginBottom: 8 }}>Data evenimentului *</label>
                     <input
@@ -275,7 +386,7 @@ export default function VenueDetailPage() {
                       required
                       value={quoteForm.event_date}
                       onChange={(e) => setQuoteForm({ ...quoteForm, event_date: e.target.value })}
-                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary }}
+                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, boxSizing: 'border-box' }}
                     />
                   </div>
 
@@ -287,7 +398,7 @@ export default function VenueDetailPage() {
                       placeholder="ex: 150"
                       value={quoteForm.guest_count}
                       onChange={(e) => setQuoteForm({ ...quoteForm, guest_count: e.target.value })}
-                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary }}
+                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, boxSizing: 'border-box' }}
                     />
                   </div>
 
@@ -297,7 +408,7 @@ export default function VenueDetailPage() {
                       required
                       value={quoteForm.event_type}
                       onChange={(e) => setQuoteForm({ ...quoteForm, event_type: e.target.value })}
-                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary }}
+                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, boxSizing: 'border-box' }}
                     >
                       <option value="">Selectează...</option>
                       {Object.entries(EVENT_TYPE_LABELS).map(([id, label]) => (
@@ -313,7 +424,7 @@ export default function VenueDetailPage() {
                       placeholder="Detalii despre evenimentul tău..."
                       value={quoteForm.message}
                       onChange={(e) => setQuoteForm({ ...quoteForm, message: e.target.value })}
-                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, resize: 'vertical' }}
+                      style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, resize: 'vertical', boxSizing: 'border-box' }}
                     />
                   </div>
 
@@ -360,6 +471,16 @@ export default function VenueDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* CSS responsive */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .venue-grid {
+            grid-template-columns: 1fr !important;
+            gap: 24px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
