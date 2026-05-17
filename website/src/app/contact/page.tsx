@@ -28,7 +28,7 @@ export default function ContactPage() {
         </p>
 
         <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: 24, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontSize: 36 }}>Tel</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: c.primary, minWidth: 50 }}>TEL</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: c.textSecondary, marginBottom: 4 }}>Telefon</div>
             <a href="tel:+40731177299" style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}>
@@ -45,7 +45,7 @@ export default function ContactPage() {
         </div>
 
         <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: 24, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontSize: 36 }}>Mail</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: c.primary, minWidth: 50 }}>MAIL</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: c.textSecondary, marginBottom: 4 }}>Email</div>
             <a href="mailto:contact@evenvy.ro" style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}>
@@ -62,11 +62,11 @@ export default function ContactPage() {
         </div>
 
         <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: 24, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontSize: 36 }}>WA</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: c.primary, minWidth: 50 }}>WA</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: c.textSecondary, marginBottom: 4 }}>WhatsApp</div>
-            
-              <a href="https://wa.me/40731177299"
+            <a
+              href="https://wa.me/40731177299"
               target="_blank"
               rel="noopener noreferrer"
               style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}
