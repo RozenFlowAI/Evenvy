@@ -64,7 +64,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'INLOCUIESTE_CU_CODUL_DE_LA_GOOGLE',
+    google: 'YgFNBXmOtEdIZZzo4rgOmY8I9X5hw5XfGcSVCxVDX9A',
   },
   category: 'business',
 };
