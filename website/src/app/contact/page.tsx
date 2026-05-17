@@ -19,7 +19,7 @@ export default function ContactPage() {
     <div style={{ minHeight: '100vh', padding: '48px 16px' }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <Link href="/" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 16, display: 'inline-block' }}>
-          ← Înapoi la pagina principală
+          {'←'} Înapoi la pagina principală
         </Link>
 
         <h1 style={{ fontSize: 36, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>Contact</h1>
@@ -27,7 +27,6 @@ export default function ContactPage() {
           Suntem aici să te ajutăm. Pentru orice întrebare, sugestie sau problemă tehnică, contactează-ne.
         </p>
 
-        {/* Telefon */}
         <div style={{
           background: c.surface,
           border: `1px solid ${c.border}`,
@@ -62,7 +61,6 @@ export default function ContactPage() {
           </button>
         </div>
 
-        {/* Email */}
         <div style={{
           background: c.surface,
           border: `1px solid ${c.border}`,
@@ -97,7 +95,6 @@ export default function ContactPage() {
           </button>
         </div>
 
-        {/* WhatsApp */}
         <div style={{
           background: c.surface,
           border: `1px solid ${c.border}`,
@@ -117,13 +114,12 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}
             >
-              Scrie-ne pe WhatsApp {'→'}
+              Scrie-ne pe WhatsApp
             </a>
             <div style={{ fontSize: 12, color: c.textTertiary, marginTop: 4 }}>Răspuns rapid în timpul programului</div>
           </div>
         </div>
 
-        {/* FAQ */}
         <div style={{
           background: c.surface,
           border: `1px solid ${c.border}`,
