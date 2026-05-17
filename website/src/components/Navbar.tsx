@@ -32,23 +32,22 @@ export default function Navbar() {
       }}>
         {/* Logo */}
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
-          <span style={{ fontSize: 22, color: c.primary }}>◆</span>
-          <span style={{ fontSize: 20, fontWeight: 700, color: c.textPrimary }}>Evenvy</span>
+          <span style={{ fontSize: 22, color: c.primary }}>Evenvy</span>
         </Link>
 
         {/* Desktop Navigation */}
         <div style={{ alignItems: 'center', gap: 24 }} className="hidden md:flex">
           <Link href="/search" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
-            Caută locații
+            Cauta locatii
           </Link>
           {user?.role === 'owner' && (
             <Link href="/dashboard" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
               Dashboard
             </Link>
-      <Link href="/contact" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14 }}>
-  Contact
-</Link>
           )}
+          <Link href="/contact" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14 }}>
+            Contact
+          </Link>
           <button
             onClick={toggleTheme}
             style={{
@@ -61,7 +60,7 @@ export default function Navbar() {
               fontSize: 13,
             }}
           >
-            {isDark ? '☀ Light' : '🌙 Dark'}
+            {isDark ? 'Light' : 'Dark'}
           </button>
           {user ? (
             <>
@@ -136,16 +135,16 @@ export default function Navbar() {
           }}
         >
           <Link href="/search" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
-            Caută locații
+            Cauta locatii
           </Link>
           {user?.role === 'owner' && (
             <Link href="/dashboard" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
               Dashboard
             </Link>
-          <Link href="/contact" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '14px 0', borderBottom: `1px solid ${c.border}` }}>
-  Contact
-</Link>
           )}
+          <Link href="/contact" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
+            Contact
+          </Link>
           {user && (
             <Link href="/my-quotes" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
               Cererile mele
@@ -164,7 +163,7 @@ export default function Navbar() {
               textAlign: 'left',
             }}
           >
-            {isDark ? '☀ Schimbă în Light' : '🌙 Schimbă în Dark'}
+            {isDark ? 'Schimba in Light' : 'Schimba in Dark'}
           </button>
           {user ? (
             <button
