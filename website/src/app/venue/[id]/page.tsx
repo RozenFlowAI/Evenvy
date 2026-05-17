@@ -99,7 +99,7 @@ export default function VenueDetailPage() {
     );
   }
 
-  const canSeeContact = (venue as any)._contact_visible === true;
+  const canSeeContact = (venue as any)._contact_visible === true || quoteSent;
   const images = venue.images && venue.images.length > 0 ? venue.images : [];
 
   return (
