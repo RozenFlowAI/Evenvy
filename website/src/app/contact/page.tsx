@@ -66,7 +66,7 @@ export default function ContactPage() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, color: c.textSecondary, marginBottom: 4 }}>WhatsApp</div>
             
-              href="https://wa.me/40731177299"
+              <a href="https://wa.me/40731177299"
               target="_blank"
               rel="noopener noreferrer"
               style={{ fontSize: 18, color: c.textPrimary, textDecoration: 'none', fontWeight: 600 }}
