@@ -260,14 +260,16 @@ export default function HomePage() {
             </div>
             <div>
               <h4 style={{ color: c.textPrimary, fontWeight: 600, marginBottom: 12 }}>Legal</h4>
+             <Link href="/despre" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Despre Evenvy</Link>
               <Link href="/contact" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Contact</Link>
               <Link href="/terms" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Termeni și condiții</Link>
               <Link href="/privacy" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Politica de confidențialitate</Link>
+              <Link href="/cookies" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Politica de cookies</Link>
             </div>
           </div>
         </div>
         <div style={{ maxWidth: 1200, margin: '32px auto 0', paddingTop: 24, borderTop: `1px solid ${c.border}`, textAlign: 'center' }}>
-          <p style={{ color: c.textTertiary, fontSize: 14 }}>© 2025 Evenvy. Toate drepturile rezervate.</p>
+          <p style={{ color: c.textTertiary, fontSize: 14 }}>© 2026 Evenvy. Toate drepturile rezervate.</p>
         </div>
       </footer>
     </div>
