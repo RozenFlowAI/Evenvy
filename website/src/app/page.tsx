@@ -8,13 +8,13 @@ import { apiCall, Venue, EVENT_TYPE_LABELS } from '@/lib/api';
 import VenueCard from '@/components/VenueCard';
 
 const EVENT_ICONS: Record<string, string> = {
-  wedding: 'NUNTA',
-  baptism: 'BOTEZ',
-  corporate: 'CORP',
-  civil_wedding: 'CIVIL',
-  party: 'PETR',
-  birthday: 'ANIV',
-  conference: 'CONF',
+  wedding: '💍',
+  baptism: '🕯️',
+  corporate: '🏢',
+  civil_wedding: '📜',
+  party: '🎉',
+  birthday: '🎂',
+  conference: '🎤',
 };
 
 const COMING_SOON_SERVICES = [
@@ -107,10 +107,10 @@ export default function HomePage() {
       >
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <h1 style={{ fontSize: 48, fontWeight: 700, color: c.textPrimary, marginBottom: 16, lineHeight: 1.2 }}>
-            Tot ce ai nevoie pentru <span style={{ color: c.primary }}>evenimentul tau perfect</span>
+      Tot ce ai nevoie pentru <span style={{ color: c.primary }}>evenimentul tau perfect</span>
           </h1>
           <p style={{ fontSize: 20, color: c.textSecondary, marginBottom: 32 }}>
-            De la locatie la zilieri - intr-un singur loc.
+            De la locatie la formatie - intr-un singur loc.
           </p>
           <Link
             href="/search"
@@ -157,7 +157,7 @@ export default function HomePage() {
                 textDecoration: 'none',
               }}
             >
-              <span style={{ fontSize: 16, fontWeight: 700, color: c.primary }}>{EVENT_ICONS[id] || id}</span>
+              <span style={{ fontSize: 32 }}>{EVENT_ICONS[id] || ''}</span>
               <span style={{ color: c.textPrimary, fontWeight: 500 }}>{label}</span>
             </Link>
           ))}
