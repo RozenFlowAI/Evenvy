@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -686,16 +686,17 @@ async def get_uploaded_file(filename: str):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
 
+# ============= WAITLIST PENTRU FEATURES VIITOARE =============
+
 class WaitlistEntry(BaseModel):
     email: EmailStr
-    service: str  # ex: "dj", "photographers", "florists", "catering", "workforce", "planners"
+    service: str
     name: Optional[str] = None
     source: Optional[str] = "homepage"
 
 
 @api_router.post("/waitlist")
 async def add_to_waitlist(data: WaitlistEntry):
-    # Verifică daca există deja
     existing = await db.waitlist.find_one({
         "email": data.email,
         "service": data.service
@@ -718,7 +719,6 @@ async def add_to_waitlist(data: WaitlistEntry):
 
 @api_router.get("/waitlist/stats")
 async def waitlist_stats():
-    # Endpoint public pentru afișare social proof
     counts = {}
     pipeline = [
         {"$group": {"_id": "$service", "count": {"$sum": 1}}}
@@ -727,7 +727,6 @@ async def waitlist_stats():
         counts[doc["_id"]] = doc["count"]
     total = sum(counts.values())
     return {"total": total, "by_service": counts}
-
 app.include_router(api_router)
 
 ALLOWED_ORIGINS = [
