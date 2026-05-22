@@ -247,7 +247,7 @@ export default function AddVenueScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.freeBannerTitle, { color: c.success }]}>Listare GRATUITĂ!</Text>
               <Text style={[styles.freeBannerText, { color: c.textSecondary }]}>
-                Primele 6 luni sunt gratuite pentru toți proprietarii. Fără comisioane!
+                Primele 3 luni sunt gratuite pentru toți proprietarii. Fără comisioane!
               </Text>
             </View>
           </View>
