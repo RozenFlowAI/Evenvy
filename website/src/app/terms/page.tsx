@@ -133,7 +133,7 @@ export default function TermsPage() {
             Utilizarea platformei este <strong style={{ color: c.textPrimary }}>gratuita</strong> pentru Clienti.
           </p>
           <p style={pStyle}>
-            Pentru Proprietari, listarea locatiilor este gratuita in primele 3 luni de la inregistrare. Dupa aceasta perioada, Evenvy poate introduce planuri tarifare optionale care vor fi comunicate cu cel putin 30 de zile inainte.
+            Pentru Proprietari, listarea locatiilor este gratuita in primele 6 luni de la inregistrare. Dupa aceasta perioada, Evenvy poate introduce planuri tarifare optionale care vor fi comunicate cu cel putin 30 de zile inainte.
           </p>
           <p style={pStyle}>
             Tranzactiile financiare intre Client si Proprietar (avansuri, plati pentru servicii) se desfasoara direct intre acestia, in afara Platformei.
