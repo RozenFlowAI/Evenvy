@@ -264,10 +264,33 @@ export default function DashboardPage() {
                       {venue.images?.[0] && (
                         <img src={venue.images[0]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       )}
-                      {/* Buton ștergere */}
+                      {/* Buton editare */}
+                      <Link
+                        href={`/dashboard/edit-venue/${venue.id}`}
+                        title="Editeaza locatia"
+                        style={{
+                          position: 'absolute',
+                          top: 8,
+                          left: 8,
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#fff',
+                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backdropFilter: 'blur(4px)',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        &#9998;
+                      </Link>
+                      {/* Buton stergere */}
                       <button
                         onClick={() => setDeleteConfirm(venue.id)}
-                        title="Șterge locația"
+                        title="Sterge locatia"
                         style={{
                           position: 'absolute',
                           top: 8,
@@ -286,7 +309,7 @@ export default function DashboardPage() {
                           backdropFilter: 'blur(4px)',
                         }}
                       >
-                        🗑
+                        &#128465;
                       </button>
                     </div>
                     <div style={{ padding: 16 }}>
