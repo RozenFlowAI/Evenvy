@@ -37,14 +37,9 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <div style={{ alignItems: 'center', gap: 24 }} className="hidden md:flex">
-          <Link href="/search" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
-            Cauta locatii
+          <Link href="/budget-planner" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
+            Budget Planner
           </Link>
-          {user?.role === 'owner' && (
-            <Link href="/dashboard" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 15 }}>
-              Dashboard
-            </Link>
-          )}
           <Link href="/contact" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14 }}>
             Contact
           </Link>
@@ -64,9 +59,6 @@ export default function Navbar() {
           </button>
           {user ? (
             <>
-              <Link href="/my-quotes" style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 14 }}>
-                Cererile mele
-              </Link>
               <button
                 onClick={logout}
                 style={{
@@ -134,22 +126,12 @@ export default function Navbar() {
             gap: 12,
           }}
         >
-          <Link href="/search" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
-            Cauta locatii
+          <Link href="/budget-planner" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
+            Budget Planner
           </Link>
-          {user?.role === 'owner' && (
-            <Link href="/dashboard" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
-              Dashboard
-            </Link>
-          )}
           <Link href="/contact" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
             Contact
           </Link>
-          {user && (
-            <Link href="/my-quotes" onClick={closeMenu} style={{ color: c.textSecondary, textDecoration: 'none', fontSize: 16, padding: '10px 0' }}>
-              Cererile mele
-            </Link>
-          )}
           <button
             onClick={() => { toggleTheme(); }}
             style={{
