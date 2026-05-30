@@ -5,6 +5,8 @@ import { BudgetFormData, BudgetResult } from '@/lib/budget-types';
 
 export const runtime = 'nodejs';
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://evenvy.onrender.com/api';
+
 function normalize(body: Partial<BudgetFormData>): BudgetFormData {
   const p = body.prioritati;
   return {
@@ -45,6 +47,32 @@ function recalculateMath(result: BudgetResult): BudgetResult {
   return { ...result, buget_total_min: totalMin, buget_total_max: totalMax, categorii: updatedCategorii };
 }
 
+async function saveLead(data: BudgetFormData, result: BudgetResult): Promise<string | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/leads`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: data.email,
+        nume: data.nume ?? null,
+        telefon: data.telefon ?? null,
+        form_data: data,
+        ai_result: result,
+        event_type: 'wedding',
+      }),
+    });
+    if (!res.ok) {
+      console.error('[leads] Backend returned', res.status);
+      return null;
+    }
+    const json = await res.json();
+    return json.lead_uuid ?? null;
+  } catch (e) {
+    console.error('[leads] Failed to save lead:', e);
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   let body: Partial<BudgetFormData>;
   try {
@@ -79,7 +107,12 @@ export async function POST(request: Request) {
     result = recalculateMath(result);
     console.log('[budget] recalc totals:', result.buget_total_min, '-', result.buget_total_max);
 
-    return NextResponse.json(result, { status: 200 });
+    const lead_uuid = await saveLead(data, result);
+    if (lead_uuid) {
+      console.log('[leads] Saved lead:', lead_uuid);
+    }
+
+    return NextResponse.json({ ...result, lead_uuid }, { status: 200 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Eroare necunoscuta la generarea planului.';
     const status = message.includes('GROQ_API_KEY') ? 503 : 500;
