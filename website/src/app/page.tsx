@@ -1,21 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
-import { apiCall, Venue, EVENT_TYPE_LABELS } from '@/lib/api';
-import VenueCard from '@/components/VenueCard';
-
-const EVENT_ICONS: Record<string, string> = {
-  wedding: '💍',
-  baptism: '🕯️',
-  corporate: '🏢',
-  civil_wedding: '📜',
-  party: '🎉',
-  birthday: '🎂',
-  conference: '🎤',
-};
 
 const COMING_SOON_SERVICES = [
   { id: 'dj', label: 'DJ si Echipe Muzica', desc: 'Gaseste cel mai bun DJ pentru evenimentul tau' },
@@ -32,9 +20,6 @@ export default function HomePage() {
   const { theme } = useTheme();
   const { user } = useAuth();
   const c = theme.colors;
-  const [venues, setVenues] = useState<Venue[]>([]);
-  const [promoted, setPromoted] = useState<Venue[]>([]);
-  const [loading, setLoading] = useState(true);
   const [modalService, setModalService] = useState<{ id: string; label: string } | null>(null);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -43,21 +28,6 @@ export default function HomePage() {
   const [error, setError] = useState('');
 
   const isOwner = user?.role === 'owner';
-
-  useEffect(() => {
-    Promise.all([
-      apiCall('/venues?sort_by=recommended&limit=6'),
-      apiCall('/venues/promoted'),
-    ])
-      .then(([v, p]) => {
-        setVenues(v);
-        setPromoted(p);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const eventTypes = Object.entries(EVENT_TYPE_LABELS);
 
   const openModal = (service: { id: string; label: string }) => {
     setModalService(service);
@@ -107,13 +77,13 @@ export default function HomePage() {
       >
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <h1 style={{ fontSize: 48, fontWeight: 700, color: c.textPrimary, marginBottom: 16, lineHeight: 1.2 }}>
-      Tot ce ai nevoie pentru <span style={{ color: c.primary }}>evenimentul tau perfect</span>
+            Planifică nunta perfectă cu <span style={{ color: c.primary }}>bugetul potrivit</span>
           </h1>
           <p style={{ fontSize: 20, color: c.textSecondary, marginBottom: 32 }}>
-            De la locatie la formatie - intr-un singur loc.
+            Calculatorul nostru AI îți spune exact cât costă nunta ta în România — fără surprize.
           </p>
           <Link
-            href="/search"
+            href="/budget-planner"
             style={{
               display: 'inline-block',
               background: c.primary,
@@ -125,90 +95,9 @@ export default function HomePage() {
               textDecoration: 'none',
             }}
           >
-            Cauta locatii
+            Calculează bugetul
           </Link>
         </div>
-      </section>
-
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px' }}>
-        <h2 style={{ fontSize: 28, fontWeight: 600, color: c.textPrimary, marginBottom: 32, textAlign: 'center' }}>
-          Ce tip de eveniment planifici?
-        </h2>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: 16,
-          }}
-        >
-          {eventTypes.map(([id, label]) => (
-            <Link
-              key={id}
-              href={`/search?event_type=${id}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 12,
-                padding: 24,
-                background: c.surface,
-                borderRadius: 12,
-                border: `1px solid ${c.primary}40`,
-                textDecoration: 'none',
-              }}
-            >
-              <span style={{ fontSize: 32 }}>{EVENT_ICONS[id] || ''}</span>
-              <span style={{ color: c.textPrimary, fontWeight: 500 }}>{label}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {promoted.length > 0 && (
-        <section style={{ background: c.surface, padding: '64px 24px' }}>
-          <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-            <h2 style={{ fontSize: 28, fontWeight: 600, color: c.textPrimary, marginBottom: 32 }}>Locatii Recomandate</h2>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                gap: 24,
-              }}
-            >
-              {promoted.map((venue) => (
-                <VenueCard key={venue.id} venue={venue} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, flexWrap: 'wrap', gap: 12 }}>
-          <h2 style={{ fontSize: 28, fontWeight: 600, color: c.textPrimary }}>Locatii Populare</h2>
-          <Link href="/search" style={{ color: c.primary, textDecoration: 'none', fontWeight: 500 }}>
-            Vezi toate locatiile
-          </Link>
-        </div>
-        {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
-            {[1, 2, 3].map((i) => (
-              <div key={i} style={{ background: c.surface, borderRadius: 12, height: 280 }} className="skeleton" />
-            ))}
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 24,
-            }}
-          >
-            {venues.map((venue) => (
-              <VenueCard key={venue.id} venue={venue} />
-            ))}
-          </div>
-        )}
       </section>
 
       <section
@@ -356,14 +245,6 @@ export default function HomePage() {
             <p style={{ color: c.textSecondary, fontSize: 14 }}>Tot ce ai nevoie pentru evenimentul tau perfect, intr-un singur loc</p>
           </div>
           <div style={{ display: 'flex', gap: 48, flexWrap: 'wrap' }}>
-            <div>
-              <h4 style={{ color: c.textPrimary, fontWeight: 600, marginBottom: 12 }}>Categorii</h4>
-              {eventTypes.slice(0, 4).map(([id, label]) => (
-                <Link key={id} href={`/search?event_type=${id}`} style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>
-                  {label}
-                </Link>
-              ))}
-            </div>
             <div>
               <h4 style={{ color: c.textPrimary, fontWeight: 600, marginBottom: 12 }}>Legal</h4>
               <Link href="/despre" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Despre Evenvy</Link>

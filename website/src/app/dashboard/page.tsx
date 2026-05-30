@@ -114,6 +114,17 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {/* Marketplace paused notice */}
+        <div style={{ background: `${c.warning}15`, border: `1px solid ${c.warning}60`, borderRadius: 12, padding: 20, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 28 }}>🔧</span>
+          <div>
+            <div style={{ color: c.warning, fontWeight: 700, fontSize: 15 }}>Marketplace temporar dezactivat</div>
+            <div style={{ color: c.textSecondary, fontSize: 14, marginTop: 2 }}>
+              Căutarea publică de locații este momentan oprită. Îți poți gestiona în continuare locațiile și cererile existente.
+            </div>
+          </div>
+        </div>
+
         {/* Free Period Banner */}
         <div style={{ background: `${c.success}20`, border: `1px solid ${c.success}`, borderRadius: 12, padding: 20, marginBottom: 32, display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ fontSize: 32 }}>🎁</span>
