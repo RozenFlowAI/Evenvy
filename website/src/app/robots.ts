@@ -12,6 +12,8 @@ export default function robots(): MetadataRoute.Robots {
           '/settings',
           '/my-quotes',
           '/api/',
+          '/budget-planner/rezultate',
+          '/rezultate-publice/',
         ],
       },
     ],
