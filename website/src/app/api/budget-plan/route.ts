@@ -31,6 +31,20 @@ function normalize(body: Partial<BudgetFormData>): BudgetFormData {
   };
 }
 
+function recalculateMath(result: BudgetResult): BudgetResult {
+  const active = result.categorii.filter(c => c.suma_max > 0);
+  const totalMin = active.reduce((sum, c) => sum + c.suma_min, 0);
+  const totalMax = active.reduce((sum, c) => sum + c.suma_max, 0);
+
+  const updatedCategorii = result.categorii.map(c =>
+    c.suma_max === 0
+      ? { ...c, procent: 0 }
+      : { ...c, procent: Math.round((c.suma_max / totalMax) * 100) }
+  );
+
+  return { ...result, buget_total_min: totalMin, buget_total_max: totalMax, categorii: updatedCategorii };
+}
+
 export async function POST(request: Request) {
   let body: Partial<BudgetFormData>;
   try {
@@ -60,6 +74,10 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+
+    console.log('[budget] AI raw totals:', result.buget_total_min, '-', result.buget_total_max);
+    result = recalculateMath(result);
+    console.log('[budget] recalc totals:', result.buget_total_min, '-', result.buget_total_max);
 
     return NextResponse.json(result, { status: 200 });
   } catch (e: unknown) {
