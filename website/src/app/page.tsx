@@ -3,71 +3,63 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTheme } from '@/context/ThemeContext';
-import { useAuth } from '@/context/AuthContext';
+import { EVENT_TYPE_LABELS } from '@/lib/api';
 
-const COMING_SOON_SERVICES = [
-  { id: 'dj', label: 'DJ si Echipe Muzica', desc: 'Gaseste cel mai bun DJ pentru evenimentul tau' },
-  { id: 'photographers', label: 'Fotografi si Videografi', desc: 'Imortalizeaza fiecare moment important' },
-  { id: 'florists', label: 'Florari si Decoratori', desc: 'Transforma locatia intr-un loc magic' },
-  { id: 'catering', label: 'Cofetarie si Catering', desc: 'Meniuri delicioase pentru toti invitatii' },
-  { id: 'workforce', label: 'Echipe Setup si Curatenie', desc: 'Oameni de incredere pentru montaj si curatenie' },
-  { id: 'planners', label: 'Wedding Planners', desc: 'Profesionisti care iti organizeaza tot' },
-];
+const EVENT_ICONS: Record<string, string> = {
+  wedding: '💍',
+  baptism: '🕯️',
+  corporate: '🏢',
+  civil_wedding: '📜',
+  party: '🎉',
+  birthday: '🎂',
+  conference: '🎤',
+};
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://evenvy.onrender.com/api';
 
 export default function HomePage() {
   const { theme } = useTheme();
-  const { user } = useAuth();
   const c = theme.colors;
-  const [modalService, setModalService] = useState<{ id: string; label: string } | null>(null);
+  const [modalType, setModalType] = useState<{ id: string; label: string } | null>(null);
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const isOwner = user?.role === 'owner';
-
-  const openModal = (service: { id: string; label: string }) => {
-    setModalService(service);
+  const openModal = (type: { id: string; label: string }) => {
+    setModalType(type);
     setSuccess(false);
     setError('');
     setEmail('');
-    setName('');
   };
 
-  const closeModal = () => {
-    setModalService(null);
-  };
+  const closeModal = () => setModalType(null);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!modalService) return;
+    if (!modalType) return;
     setError('');
     setSubmitting(true);
     try {
       const res = await fetch(`${API_URL}/waitlist`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          name: name || null,
-          service: modalService.id,
-          source: 'homepage',
-        }),
+        body: JSON.stringify({ email, service: modalType.id, source: 'homepage' }),
       });
-      if (!res.ok) throw new Error('A aparut o eroare. Incearca din nou.');
+      if (!res.ok) throw new Error('A apărut o eroare. Încearcă din nou.');
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'A aparut o eroare');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'A apărut o eroare');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const eventTypes = Object.entries(EVENT_TYPE_LABELS);
+
   return (
     <div>
+      {/* Hero */}
       <section
         style={{
           background: `linear-gradient(135deg, ${c.surface} 0%, ${c.background} 100%)`,
@@ -100,151 +92,130 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section
-        style={{
-          background: `linear-gradient(135deg, ${c.surface} 0%, ${c.background} 100%)`,
-          padding: '80px 24px',
-        }}
-      >
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <div style={{ display: 'inline-block', background: `${c.primary}20`, color: c.primary, padding: '6px 16px', borderRadius: 999, fontSize: 13, fontWeight: 700, marginBottom: 16, letterSpacing: 0.5 }}>
-              COMING SOON
-            </div>
-            <h2 style={{ fontSize: 32, fontWeight: 700, color: c.textPrimary, marginBottom: 12 }}>
-              Evenvy creste - iata ce urmeaza
-            </h2>
-            <p style={{ fontSize: 17, color: c.textSecondary, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
-              In curand vei putea organiza orice tip de eveniment complet de pe Evenvy. Inscrie-te pe lista de asteptare pentru serviciul care te intereseaza si vei fi anuntat primul cand lansam.
-            </p>
-          </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: 20,
-            }}
-          >
-            {COMING_SOON_SERVICES.map((service) => (
+      {/* Event types grid */}
+      <section style={{ maxWidth: 1200, margin: '0 auto', padding: '64px 24px' }}>
+        <h2 style={{ fontSize: 28, fontWeight: 600, color: c.textPrimary, marginBottom: 8, textAlign: 'center' }}>
+          Ce tip de eveniment planifici?
+        </h2>
+        <p style={{ color: c.textSecondary, textAlign: 'center', marginBottom: 32, fontSize: 16 }}>
+          AI Planner pentru nunți e disponibil acum. Celelalte tipuri — în curând.
+        </p>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {eventTypes.map(([id, label]) => {
+            if (id === 'wedding') {
+              return (
+                <Link
+                  key={id}
+                  href="/budget-planner"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: 24,
+                    background: c.surface,
+                    borderRadius: 12,
+                    border: `2px solid ${c.primary}`,
+                    textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ fontSize: 32 }}>{EVENT_ICONS[id]}</span>
+                  <span style={{ color: c.textPrimary, fontWeight: 700 }}>{label}</span>
+                  <span style={{ fontSize: 11, color: c.primary, fontWeight: 700, background: `${c.primary}18`, padding: '3px 10px', borderRadius: 999, letterSpacing: 0.3 }}>
+                    DISPONIBIL
+                  </span>
+                </Link>
+              );
+            }
+            return (
               <button
-                key={service.id}
-                onClick={() => openModal({ id: service.id, label: service.label })}
+                key={id}
+                onClick={() => openModal({ id, label })}
                 style={{
-                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: 24,
                   background: c.surface,
+                  borderRadius: 12,
                   border: `1px solid ${c.border}`,
-                  borderRadius: 16,
-                  padding: 28,
-                  textAlign: 'left',
                   cursor: 'pointer',
                   fontFamily: 'inherit',
                 }}
               >
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    background: `${c.primary}20`,
-                    color: c.primary,
-                    padding: '4px 10px',
-                    borderRadius: 999,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: 0.5,
-                  }}
-                >
+                <span style={{ fontSize: 32, opacity: 0.55 }}>{EVENT_ICONS[id]}</span>
+                <span style={{ color: c.textSecondary, fontWeight: 500 }}>{label}</span>
+                <span style={{ fontSize: 11, color: c.textTertiary, fontWeight: 700, background: c.surfaceHighlight, padding: '3px 10px', borderRadius: 999, letterSpacing: 0.3 }}>
                   COMING SOON
-                </div>
-                <h3 style={{ fontSize: 18, fontWeight: 600, color: c.textPrimary, marginBottom: 8, marginTop: 16, paddingRight: 100 }}>
-                  {service.label}
-                </h3>
-                <p style={{ color: c.textSecondary, fontSize: 14, lineHeight: 1.5, marginBottom: 16 }}>
-                  {service.desc}
-                </p>
-                <div style={{ color: c.primary, fontWeight: 600, fontSize: 14 }}>
-                  Vreau sa fiu primul
-                </div>
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </section>
 
-      {!isOwner && (
-        <section
-          style={{
-            background: `linear-gradient(135deg, ${c.primary}20 0%, ${c.surface} 100%)`,
-            padding: '80px 24px',
-            textAlign: 'center',
-          }}
-        >
-          <h2 style={{ fontSize: 32, fontWeight: 600, color: c.textPrimary, marginBottom: 16 }}>
-            Esti proprietar de locatie?
+      {/* AI CTA section */}
+      <section
+        style={{
+          background: `linear-gradient(135deg, ${c.primary}15 0%, ${c.surface} 100%)`,
+          padding: '80px 24px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 32, fontWeight: 700, color: c.textPrimary, marginBottom: 16, lineHeight: 1.35 }}>
+            AI-ul nostru îți spune brutal de cinstit cât costă nunta ta
           </h2>
-          <p style={{ fontSize: 18, color: c.textSecondary, marginBottom: 32 }}>
-            Listeaza-ti locatia gratuit si primeste cereri de oferta de la clienti.
+          <p style={{ fontSize: 17, color: c.textSecondary, marginBottom: 36, lineHeight: 1.7 }}>
+            Fără estimări vagi. Fără surprize de ultim moment. Bazat pe prețurile reale din România în 2026.
           </p>
           <Link
-            href="/auth?role=owner"
+            href="/budget-planner"
             style={{
               display: 'inline-block',
               background: c.primary,
               color: c.background,
-              padding: '14px 40px',
+              padding: '16px 40px',
               borderRadius: 999,
-              fontSize: 16,
+              fontSize: 17,
               fontWeight: 600,
               textDecoration: 'none',
             }}
           >
-            Inregistreaza-te ca proprietar
+            Începe planificarea cu AI →
           </Link>
-        </section>
-      )}
+        </div>
+      </section>
 
-      {isOwner && (
-        <section
-          style={{
-            background: `linear-gradient(135deg, ${c.primary}20 0%, ${c.surface} 100%)`,
-            padding: '80px 24px',
-            textAlign: 'center',
-          }}
-        >
-          <h2 style={{ fontSize: 32, fontWeight: 600, color: c.textPrimary, marginBottom: 16 }}>
-            Bun venit inapoi!
-          </h2>
-          <p style={{ fontSize: 18, color: c.textSecondary, marginBottom: 32 }}>
-            Gestioneaza-ti locatiile si vezi cererile primite in Dashboard.
-          </p>
-          <Link
-            href="/dashboard"
-            style={{
-              display: 'inline-block',
-              background: c.primary,
-              color: c.background,
-              padding: '14px 40px',
-              borderRadius: 999,
-              fontSize: 16,
-              fontWeight: 600,
-              textDecoration: 'none',
-            }}
-          >
-            Mergi la Dashboard
-          </Link>
-        </section>
-      )}
-
+      {/* Footer */}
       <footer style={{ background: c.surface, borderTop: `1px solid ${c.border}`, padding: '48px 24px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 32 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <span style={{ fontSize: 20, fontWeight: 700, color: c.textPrimary }}>Evenvy</span>
             </div>
-            <p style={{ color: c.textSecondary, fontSize: 14 }}>Tot ce ai nevoie pentru evenimentul tau perfect, intr-un singur loc</p>
+            <p style={{ color: c.textSecondary, fontSize: 14 }}>Tot ce ai nevoie pentru evenimentul tău perfect, într-un singur loc</p>
           </div>
           <div style={{ display: 'flex', gap: 48, flexWrap: 'wrap' }}>
+            <div>
+              <h4 style={{ color: c.textPrimary, fontWeight: 600, marginBottom: 12 }}>Categorii</h4>
+              {eventTypes.slice(0, 4).map(([id, label]) => (
+                <Link
+                  key={id}
+                  href={`/search?event_type=${id}`}
+                  style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
             <div>
               <h4 style={{ color: c.textPrimary, fontWeight: 600, marginBottom: 12 }}>Legal</h4>
               <Link href="/despre" style={{ display: 'block', color: c.textSecondary, textDecoration: 'none', fontSize: 14, marginBottom: 8 }}>Despre Evenvy</Link>
@@ -260,43 +231,40 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {modalService && (
+      {/* Modal waitlist pentru tipuri de eveniment */}
+      {modalType && (
         <div
           onClick={closeModal}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: c.surface, borderRadius: 16, padding: 32, maxWidth: 480, width: '100%', border: `1px solid ${c.border}`, maxHeight: '90vh', overflow: 'auto' }}
+            style={{ background: c.surface, borderRadius: 16, padding: 32, maxWidth: 440, width: '100%', border: `1px solid ${c.border}` }}
           >
             {success ? (
               <div style={{ textAlign: 'center' }}>
-                <div style={{ width: 64, height: 64, borderRadius: 32, background: `${c.primary}20`, color: c.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, margin: '0 auto 16px' }}>
-                  OK
-                </div>
-                <h2 style={{ fontSize: 24, fontWeight: 700, color: c.textPrimary, marginBottom: 12 }}>Te-am inscris cu succes!</h2>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
+                <h2 style={{ fontSize: 22, fontWeight: 700, color: c.textPrimary, marginBottom: 12 }}>Mulțumim!</h2>
                 <p style={{ color: c.textSecondary, lineHeight: 1.6, marginBottom: 24 }}>
-                  Te anuntam pe email cand lansam <strong style={{ color: c.primary }}>{modalService.label}</strong>. Multumim ca ai incredere in noi!
+                  Te anunțăm când lansăm AI Planner pentru{' '}
+                  <strong style={{ color: c.primary }}>{modalType.label}</strong>.
                 </p>
                 <button
                   onClick={closeModal}
                   style={{ background: c.primary, color: c.background, border: 'none', padding: '12px 32px', borderRadius: 999, fontWeight: 600, cursor: 'pointer', fontSize: 15 }}
                 >
-                  Inchide
+                  Închide
                 </button>
               </div>
             ) : (
               <form onSubmit={handleWaitlistSubmit}>
-                <div style={{ display: 'inline-block', background: `${c.primary}20`, color: c.primary, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 700, marginBottom: 16, letterSpacing: 0.5 }}>
-                  COMING SOON
-                </div>
-                <h2 style={{ fontSize: 22, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>
-                  {modalService.label}
+                <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 16 }}>{EVENT_ICONS[modalType.id]}</div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: c.textPrimary, marginBottom: 10, textAlign: 'center', lineHeight: 1.4 }}>
+                  Suntem în curs de a lansa AI Planner pentru {modalType.label}
                 </h2>
-                <p style={{ color: c.textSecondary, marginBottom: 24, lineHeight: 1.6 }}>
-                  Te anuntam pe email cand lansam acest serviciu. Vei fi printre primii care primesc acces.
+                <p style={{ color: c.textSecondary, marginBottom: 24, lineHeight: 1.6, textAlign: 'center' }}>
+                  Lasă-ne email-ul și te anunțăm primul.
                 </p>
-
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: 'block', fontSize: 13, color: c.textSecondary, marginBottom: 6 }}>Email *</label>
                   <input
@@ -308,38 +276,24 @@ export default function HomePage() {
                     style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, fontSize: 15, boxSizing: 'border-box' }}
                   />
                 </div>
-
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: 'block', fontSize: 13, color: c.textSecondary, marginBottom: 6 }}>Nume (optional)</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ion Popescu"
-                    style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${c.border}`, background: c.surfaceHighlight, color: c.textPrimary, fontSize: 15, boxSizing: 'border-box' }}
-                  />
-                </div>
-
                 {error && (
                   <div style={{ color: '#EF4444', fontSize: 13, marginBottom: 16, padding: 10, background: '#EF444415', borderRadius: 8 }}>
                     {error}
                   </div>
                 )}
-
                 <button
                   type="submit"
                   disabled={submitting}
                   style={{ width: '100%', padding: 14, borderRadius: 999, border: 'none', background: c.primary, color: c.background, fontSize: 15, fontWeight: 600, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1 }}
                 >
-                  {submitting ? 'Se trimite...' : 'Inscrie-ma in lista'}
+                  {submitting ? 'Se trimite...' : 'Anunță-mă'}
                 </button>
-
                 <button
                   type="button"
                   onClick={closeModal}
                   style={{ width: '100%', padding: 12, marginTop: 8, borderRadius: 999, border: 'none', background: 'transparent', color: c.textTertiary, fontSize: 14, cursor: 'pointer' }}
                 >
-                  Anuleaza
+                  Anulează
                 </button>
               </form>
             )}

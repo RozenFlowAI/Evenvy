@@ -15,7 +15,12 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/search', destination: '/budget-planner', permanent: false },
-      { source: '/venue/:id*', destination: '/budget-planner', permanent: false },
+      { source: '/search/:path*', destination: '/budget-planner', permanent: false },
+      { source: '/venue', destination: '/budget-planner', permanent: false },
+      { source: '/venue/:id', destination: '/budget-planner', permanent: false },
+      { source: '/pentru-proprietari', destination: '/budget-planner', permanent: false },
+      { source: '/dashboard/add-venue', destination: '/budget-planner', permanent: false },
+      { source: '/dashboard/edit-venue/:path*', destination: '/budget-planner', permanent: false },
       { source: '/my-quotes', destination: '/budget-planner', permanent: false },
     ];
   },
