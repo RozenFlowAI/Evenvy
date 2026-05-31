@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callGroq } from '@/lib/groq';
+import { callGemini } from '@/lib/gemini';
 import { getSystemPrompt, getUserPrompt } from '@/lib/budget-prompt';
 import { BudgetFormData, BudgetResult } from '@/lib/budget-types';
 
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   const data = normalize(body);
 
   try {
-    const raw = await callGroq(getSystemPrompt(), getUserPrompt(data));
+    const raw = await callGemini(getSystemPrompt(), getUserPrompt(data));
 
     let result: BudgetResult;
     try {
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, lead_uuid }, { status: 200 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Eroare necunoscuta la generarea planului.';
-    const status = message.includes('GROQ_API_KEY') ? 503 : 500;
+    const status = message.includes('GEMINI_API_KEY') ? 503 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
