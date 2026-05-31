@@ -49,4 +49,5 @@ export interface BudgetResult {
   sfaturi_brutale: string[];
   plan_actiune: BudgetPlanActiune;
   scor_realism: number;
+  lead_uuid?: string;
 }

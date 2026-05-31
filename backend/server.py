@@ -6,9 +6,10 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import asyncio
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
@@ -727,6 +728,123 @@ async def waitlist_stats():
         counts[doc["_id"]] = doc["count"]
     total = sum(counts.values())
     return {"total": total, "by_service": counts}
+
+
+# ============= AI BUDGET LEADS =============
+
+class BudgetLead(BaseModel):
+    email: EmailStr
+    nume: Optional[str] = None
+    telefon: Optional[str] = None
+    form_data: dict
+    ai_result: dict
+    event_type: str = "wedding"
+
+
+def _send_brevo_email_sync(to_email: str, to_name: Optional[str], lead_uuid: str, oras: str) -> None:
+    import requests as req
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
+        logger.warning("[brevo] BREVO_API_KEY not set, skipping email")
+        return
+    sender_email = os.getenv("BREVO_SENDER_EMAIL", "contact@evenvy.ro")
+    sender_name = os.getenv("BREVO_SENDER_NAME", "Evenvy AI")
+    site_url = os.getenv("NEXT_PUBLIC_SITE_URL", "https://evenvy.ro")
+    share_url = f"{site_url}/rezultate-publice/{lead_uuid}"
+    display_name = to_name or "viitor mire/mireasă"
+    html_content = f"""
+<p>Bună <strong>{display_name}</strong>,</p>
+<p>Planul vostru de buget pentru nuntă în <strong>{oras}</strong> a fost generat de Evenvy AI.</p>
+<p>Accesează-l oricând la linkul de mai jos și distribuie-l partenerului tău:</p>
+<p style="margin:24px 0"><a href="{share_url}" style="background:#D4AF37;color:#fff;padding:12px 24px;border-radius:24px;text-decoration:none;font-weight:bold">Vezi planul de buget</a></p>
+<p style="color:#888;font-size:13px">Link direct: {share_url}</p>
+<p>Cu drag,<br><strong>Echipa Evenvy</strong></p>
+"""
+    payload = {
+        "sender": {"name": sender_name, "email": sender_email},
+        "to": [{"email": to_email, "name": to_name or to_email}],
+        "subject": "Planul tău de buget pentru nuntă — Evenvy AI",
+        "htmlContent": html_content,
+    }
+    try:
+        resp = req.post(
+            "https://api.brevo.com/v3/smtp/email",
+            json=payload,
+            headers={"api-key": api_key, "Content-Type": "application/json"},
+            timeout=10,
+        )
+        if resp.status_code >= 400:
+            logger.error(f"[brevo] HTTP {resp.status_code}: {resp.text[:200]}")
+        else:
+            logger.info(f"[brevo] Email sent to {to_email} (lead {lead_uuid})")
+    except Exception as e:
+        logger.error(f"[brevo] Exception: {e}")
+
+
+@api_router.post("/leads")
+async def save_budget_lead(data: BudgetLead):
+    existing = await db.budget_leads.find_one({"email": data.email, "event_type": data.event_type})
+    if existing:
+        lead_uuid = existing["lead_uuid"]
+        await db.budget_leads.update_one(
+            {"_id": existing["_id"]},
+            {"$set": {
+                "form_data": data.form_data,
+                "ai_result": data.ai_result,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }}
+        )
+    else:
+        lead_uuid = str(uuid.uuid4())[:8]
+        entry = {
+            "email": data.email,
+            "nume": data.nume,
+            "telefon": data.telefon,
+            "form_data": data.form_data,
+            "ai_result": data.ai_result,
+            "event_type": data.event_type,
+            "lead_uuid": lead_uuid,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.budget_leads.insert_one(entry)
+        oras = data.form_data.get("oras", "")
+        asyncio.create_task(asyncio.to_thread(
+            _send_brevo_email_sync, data.email, data.nume, lead_uuid, oras
+        ))
+    return {"lead_uuid": lead_uuid}
+
+
+@api_router.get("/leads/stats")
+async def leads_stats():
+    total = await db.budget_leads.count_documents({})
+    by_event_pipeline = [{"$group": {"_id": "$event_type", "count": {"$sum": 1}}}]
+    by_city_pipeline = [{"$group": {"_id": "$form_data.oras", "count": {"$sum": 1}}}]
+    cutoff = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    last_24h_cutoff = datetime.now(timezone.utc).replace(microsecond=0)
+    from datetime import timedelta as td
+    last_24h_cutoff = (last_24h_cutoff - td(hours=24)).isoformat()
+
+    by_event: dict = {}
+    async for doc in db.budget_leads.aggregate(by_event_pipeline):
+        by_event[doc["_id"] or "unknown"] = doc["count"]
+
+    by_city: dict = {}
+    async for doc in db.budget_leads.aggregate(by_city_pipeline):
+        by_city[doc["_id"] or "unknown"] = doc["count"]
+
+    last_24h = await db.budget_leads.count_documents({"created_at": {"$gte": last_24h_cutoff}})
+    return {"total": total, "by_event_type": by_event, "by_city": by_city, "last_24h": last_24h}
+
+
+@api_router.get("/leads/{lead_uuid}")
+async def get_public_lead(lead_uuid: str):
+    doc = await db.budget_leads.find_one({"lead_uuid": lead_uuid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Plan negasit.")
+    form_anon = {k: v for k, v in doc["form_data"].items() if k not in ("email", "telefon", "nume")}
+    return {"ai_result": doc["ai_result"], "form_data": form_anon}
+
+
 app.include_router(api_router)
 
 ALLOWED_ORIGINS = [
@@ -764,6 +882,8 @@ async def startup():
     await db.quotes.create_index("venue_id")
     await db.reviews.create_index("venue_id")
     await db.promotion_purchases.create_index("venue_id")
+    await db.budget_leads.create_index("lead_uuid", unique=True)
+    await db.budget_leads.create_index([("email", 1), ("event_type", 1)])
     logger.info("Evenvy Event Venue Marketplace API started")
 
 @app.on_event("shutdown")

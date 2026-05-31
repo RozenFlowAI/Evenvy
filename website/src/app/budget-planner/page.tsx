@@ -8,6 +8,7 @@ import { useLocalStorageRaw, writeLocalStorage } from '@/lib/use-local-storage';
 
 const FORM_KEY = 'evenvy_budget_form';
 const RESULT_KEY = 'evenvy_budget_result';
+const LEAD_UUID_KEY = 'evenvy_lead_uuid';
 const DATA_STEPS = 8; // pasii de colectare date (1..8)
 
 const ORASE = ['București', 'Cluj', 'Timișoara', 'Iași', 'Constanța', 'Brașov', 'Sat / la țară', 'Altul'];
@@ -93,6 +94,9 @@ export default function BudgetPlannerPage() {
       }
       const result = await res.json();
       localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+      if (result.lead_uuid) {
+        localStorage.setItem(LEAD_UUID_KEY, result.lead_uuid);
+      }
       router.push('/budget-planner/rezultate');
     } catch (e: unknown) {
       submittedRef.current = false;

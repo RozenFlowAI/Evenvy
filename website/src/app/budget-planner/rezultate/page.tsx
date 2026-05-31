@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { BudgetResult } from '@/lib/budget-types';
@@ -8,6 +8,8 @@ import { useLocalStorageRaw, removeLocalStorage } from '@/lib/use-local-storage'
 
 const RESULT_KEY = 'evenvy_budget_result';
 const FORM_KEY = 'evenvy_budget_form';
+const LEAD_UUID_KEY = 'evenvy_lead_uuid';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://evenvy.ro';
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('ro-RO').format(Math.round(n));
@@ -17,6 +19,7 @@ export default function RezultatePage() {
   const { theme } = useTheme();
   const c = theme.colors;
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
 
   const raw = useLocalStorageRaw(RESULT_KEY);
   const result = useMemo<BudgetResult | null>(() => {
@@ -132,14 +135,42 @@ export default function RezultatePage() {
           ))}
         </div>
 
+        {/* SHARE */}
+        {(() => {
+          const leadUuid = typeof window !== 'undefined' ? localStorage.getItem(LEAD_UUID_KEY) : null;
+          if (!leadUuid) return null;
+          const shareUrl = `${SITE_URL}/rezultate-publice/${leadUuid}`;
+          const handleCopy = () => {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2500);
+            });
+          };
+          return (
+            <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 24 }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, color: c.textPrimary, marginBottom: 8 }}>
+                Distribuie planul partenerului tău
+              </h2>
+              <p style={{ color: c.textSecondary, fontSize: 14, marginBottom: 16 }}>
+                Linkul de mai jos este public și nu conține date personale.
+              </p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <code style={{ flex: 1, minWidth: 0, background: c.surfaceHighlight, border: `1px solid ${c.border}`, borderRadius: 8, padding: '10px 14px', fontSize: 13, color: c.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {shareUrl}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  style={{ flexShrink: 0, padding: '10px 20px', borderRadius: 8, border: 'none', background: copied ? c.success : c.primary, color: c.background, fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'background 0.2s' }}
+                >
+                  {copied ? 'Copiat!' : 'Copiază linkul'}
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* CTA */}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <button
-            onClick={() => alert('Salvarea rezultatelor va fi disponibilă în curând.')}
-            style={{ flex: 1, minWidth: 200, padding: 18, borderRadius: 999, border: 'none', background: c.primary, color: c.background, fontSize: 17, fontWeight: 700, cursor: 'pointer' }}
-          >
-            Salvează rezultatele
-          </button>
           <button
             onClick={startOver}
             style={{ flex: 1, minWidth: 200, padding: 18, borderRadius: 999, border: `1px solid ${c.border}`, background: 'transparent', color: c.textPrimary, fontSize: 17, fontWeight: 600, cursor: 'pointer' }}
