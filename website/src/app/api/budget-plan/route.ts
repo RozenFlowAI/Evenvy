@@ -113,6 +113,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ...result, lead_uuid }, { status: 200 });
+
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Eroare necunoscuta la generarea planului.';
     const status = message.includes('GROQ_API_KEY') ? 503 : 500;
