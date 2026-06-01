@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { callGemini } from '@/lib/gemini';
+import { callClaude } from '@/lib/claude';
 import { getSystemPrompt, getUserPrompt } from '@/lib/budget-prompt';
 import { BudgetFormData, BudgetResult } from '@/lib/budget-types';
 
@@ -73,6 +73,13 @@ async function saveLead(data: BudgetFormData, result: BudgetResult): Promise<str
   }
 }
 
+function extractJSON(text: string): string {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('Nu s-a gasit JSON in raspuns');
+  return text.substring(start, end + 1);
+}
+
 export async function POST(request: Request) {
   let body: Partial<BudgetFormData>;
   try {
@@ -91,11 +98,11 @@ export async function POST(request: Request) {
   const data = normalize(body);
 
   try {
-    const raw = await callGemini(getSystemPrompt(), getUserPrompt(data));
+    const raw = await callClaude(getSystemPrompt(), getUserPrompt(data));
 
     let result: BudgetResult;
     try {
-      result = JSON.parse(raw);
+      result = JSON.parse(extractJSON(raw));
     } catch {
       return NextResponse.json(
         { error: 'AI-ul a returnat un raspuns care nu este JSON valid. Incearca din nou.' },
@@ -115,7 +122,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ...result, lead_uuid }, { status: 200 });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Eroare necunoscuta la generarea planului.';
-    const status = message.includes('GEMINI_API_KEY') ? 503 : 500;
+    const status = message.includes('ANTHROPIC_API_KEY') ? 503 : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }
