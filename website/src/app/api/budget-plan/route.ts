@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { callGroq } from '@/lib/groq';
-import { getSystemPrompt, getUserPrompt } from '@/lib/budget-prompt';
+import { calculeazaBuget, liniiLaCategorii } from '@/lib/budget-engine';
+import { genereazaTexte } from '@/lib/budget-ai';
+import { PRICING_SOURCES, PRICING_UPDATED } from '@/lib/pricing-data';
 import { BudgetFormData, BudgetResult } from '@/lib/budget-types';
 
 export const runtime = 'nodejs';
@@ -31,20 +32,6 @@ function normalize(body: Partial<BudgetFormData>): BudgetFormData {
     nume: body.nume,
     telefon: body.telefon,
   };
-}
-
-function recalculateMath(result: BudgetResult): BudgetResult {
-  const active = result.categorii.filter(c => c.suma_max > 0);
-  const totalMin = active.reduce((sum, c) => sum + c.suma_min, 0);
-  const totalMax = active.reduce((sum, c) => sum + c.suma_max, 0);
-
-  const updatedCategorii = result.categorii.map(c =>
-    c.suma_max === 0
-      ? { ...c, procent: 0 }
-      : { ...c, procent: Math.round((c.suma_max / totalMax) * 100) }
-  );
-
-  return { ...result, buget_total_min: totalMin, buget_total_max: totalMax, categorii: updatedCategorii };
 }
 
 async function saveLead(data: BudgetFormData, result: BudgetResult): Promise<string | null> {
@@ -91,32 +78,35 @@ export async function POST(request: Request) {
   const data = normalize(body);
 
   try {
-    const raw = await callGroq(getSystemPrompt(), getUserPrompt(data));
+    // 1. Cifrele: calcul determinist din tabelul de prețuri
+    const calc = calculeazaBuget(data);
+    // 2. Textele: AI explică planul (cu fallback în cod dacă AI-ul nu răspunde)
+    const texte = await genereazaTexte(data, calc);
 
-    let result: BudgetResult;
-    try {
-      result = JSON.parse(raw);
-    } catch {
-      return NextResponse.json(
-        { error: 'AI-ul a returnat un raspuns care nu este JSON valid. Incearca din nou.' },
-        { status: 502 }
-      );
-    }
-
-    console.log('[budget] AI raw totals:', result.buget_total_min, '-', result.buget_total_max);
-    result = recalculateMath(result);
-    console.log('[budget] recalc totals:', result.buget_total_min, '-', result.buget_total_max);
+    const result: BudgetResult = {
+      verdict: texte.verdict,
+      buget_total_min: calc.totalMin,
+      buget_total_max: calc.totalMax,
+      buget_realist: true,
+      categorii: liniiLaCategorii(calc),
+      sfaturi_brutale: texte.sfaturi_brutale,
+      plan_actiune: texte.plan_actiune,
+      scor_realism: calc.scorRealism,
+      buget_declarat: calc.buget,
+      buget_per_persoana: calc.bugetPerPers,
+      clasificare: calc.clasificare,
+      diferenta: calc.diferenta,
+      surse: PRICING_SOURCES,
+      preturi_actualizate: PRICING_UPDATED,
+      sursa_text: texte.sursa_text,
+    };
+    console.log('[budget]', data.oras, data.invitati, 'inv ->', calc.totalMin, '-', calc.totalMax, '| text:', texte.sursa_text);
 
     const lead_uuid = await saveLead(data, result);
-    if (lead_uuid) {
-      console.log('[leads] Saved lead:', lead_uuid);
-    }
-
     return NextResponse.json({ ...result, lead_uuid }, { status: 200 });
-
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Eroare necunoscuta la generarea planului.';
-    const status = message.includes('GROQ_API_KEY') ? 503 : 500;
-    return NextResponse.json({ error: message }, { status });
+    console.error('[budget] error:', message);
+    return NextResponse.json({ error: 'Nu am putut genera planul. Încearcă din nou.' }, { status: 500 });
   }
 }

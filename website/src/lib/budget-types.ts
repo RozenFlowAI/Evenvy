@@ -1,5 +1,5 @@
 // Tipuri partajate pentru AI Budget Planner.
-// Importate de budget-prompt.ts, route.ts si paginile budget-planner.
+// Importate de budget-engine.ts, route.ts si paginile budget-planner.
 
 export interface BudgetPrioritati {
   locatie: number;
@@ -49,5 +49,12 @@ export interface BudgetResult {
   sfaturi_brutale: string[];
   plan_actiune: BudgetPlanActiune;
   scor_realism: number;
+  buget_declarat?: number | null;
+  buget_per_persoana?: number | null;
+  clasificare?: string | null;
+  diferenta?: number | null; // pozitiv = surplus, negativ = lipsă
+  surse?: string[];
+  preturi_actualizate?: string;
+  sursa_text?: 'ai' | 'fallback';
   lead_uuid?: string;
 }

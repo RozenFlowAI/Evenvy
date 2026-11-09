@@ -53,8 +53,11 @@ export default function RezultatePage() {
     );
   }
 
-  const realist = result.buget_realist;
-  const accent = realist ? c.success : c.error;
+  const dif = result.diferenta;
+  const accent = dif == null || dif >= 0 ? c.success : c.warning;
+  const eticheta = result.clasificare
+    ? `Buget ${result.clasificare.toLowerCase()}${result.buget_per_persoana ? ` · ${fmt(result.buget_per_persoana)} EUR/persoană` : ''}`
+    : 'Estimare fără buget declarat';
   const scor = Math.max(0, Math.min(10, result.scor_realism));
 
   return (
@@ -67,9 +70,9 @@ export default function RezultatePage() {
         {/* VERDICT */}
         <div style={{ background: c.surface, border: `2px solid ${accent}`, borderRadius: 16, padding: 28, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <span style={{ fontSize: 24 }}>{realist ? '✅' : '🚨'}</span>
+            <span style={{ fontSize: 24 }}>{dif == null || dif >= 0 ? '✅' : '🧮'}</span>
             <span style={{ color: accent, fontWeight: 800, fontSize: 14, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              {realist ? 'Buget realist' : 'Buget nerealist'}
+              {eticheta}
             </span>
           </div>
           <p style={{ color: c.textPrimary, fontSize: 18, lineHeight: 1.6, marginBottom: 20 }}>{result.verdict}</p>
@@ -79,6 +82,11 @@ export default function RezultatePage() {
               <div style={{ color: c.textPrimary, fontSize: 24, fontWeight: 800 }}>
                 {fmt(result.buget_total_min)} - {fmt(result.buget_total_max)} EUR
               </div>
+              {dif != null && (
+                <div style={{ color: accent, fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                  {dif >= 0 ? `Rezervă estimată: ~${fmt(dif)} EUR` : `Lipsă estimată: ~${fmt(-dif)} EUR`}
+                </div>
+              )}
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: c.textTertiary, fontSize: 13, marginBottom: 6 }}>
@@ -110,7 +118,7 @@ export default function RezultatePage() {
         </div>
 
         {/* SFATURI BRUTALE */}
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: c.textPrimary, marginBottom: 16 }}>Sfaturi brutale</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: c.textPrimary, marginBottom: 16 }}>Sfaturi pentru bugetul vostru</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
           {result.sfaturi_brutale.map((s, i) => (
             <div key={i} style={{ background: `${c.warning}12`, border: `1px solid ${c.warning}55`, borderRadius: 12, padding: 16, display: 'flex', gap: 12 }}>
@@ -134,6 +142,21 @@ export default function RezultatePage() {
             </div>
           ))}
         </div>
+
+        {/* SURSE */}
+        {result.surse && result.surse.length > 0 && (
+          <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 12, padding: 18, marginBottom: 24 }}>
+            <div style={{ color: c.textPrimary, fontWeight: 700, fontSize: 14, marginBottom: 8 }}>
+              De unde vin cifrele{result.preturi_actualizate ? ` (prețuri actualizate ${result.preturi_actualizate})` : ''}
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, color: c.textSecondary, fontSize: 13, lineHeight: 1.6 }}>
+              {result.surse.map((s, i) => <li key={i}>{s}</li>)}
+            </ul>
+            <p style={{ color: c.textTertiary, fontSize: 12, margin: '8px 0 0' }}>
+              Sumele sunt calculate din tabelul de prețuri, nu de AI. Ofertele reale pot varia — folosiți-le ca punct de plecare la negociere.
+            </p>
+          </div>
+        )}
 
         {/* SHARE */}
         {(() => {

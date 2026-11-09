@@ -113,7 +113,7 @@ export default async function PublicRezultatePage({ params }: { params: Promise<
         </div>
 
         {/* Sfaturi */}
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Sfaturi brutale</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Sfaturi pentru bugetul vostru</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
           {result.sfaturi_brutale.map((s, i) => (
             <div key={i} style={{ background: '#1a1a1b', border: '1px solid #3a3000', borderRadius: 12, padding: 16, display: 'flex', gap: 12 }}>
