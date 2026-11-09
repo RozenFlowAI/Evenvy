@@ -6,6 +6,9 @@ import { CalculBuget } from './budget-engine';
 
 const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001';
+const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+// llama-3.3-70b-versatile a fost retras pe 16 aug 2026; gpt-oss-120b e înlocuitorul recomandat de Groq
+const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
 
 export interface TexteAI {
   verdict: string;
@@ -100,6 +103,40 @@ async function callClaude(user: string): Promise<string> {
   }
 }
 
+async function callGroq(user: string): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('GROQ_API_KEY lipsește');
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 25_000);
+  try {
+    const res = await fetch(GROQ_ENDPOINT, {
+      method: 'POST',
+      signal: ctrl.signal,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.4,
+        max_tokens: 3000,
+      }),
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Groq ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const json = await res.json();
+    const text = json?.choices?.[0]?.message?.content;
+    if (typeof text !== 'string' || !text) throw new Error('Răspuns Groq fără text');
+    return text;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function extrageJson(text: string): unknown {
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}');
@@ -151,18 +188,22 @@ export function texteFallback(data: BudgetFormData, calc: CalculBuget): TexteAI 
 }
 
 export async function genereazaTexte(data: BudgetFormData, calc: CalculBuget): Promise<TexteAI> {
-  try {
-    const raw = await callClaude(rezumatCalcul(data, calc));
-    const parsed = extrageJson(raw);
-    if (!valid(parsed)) throw new Error('JSON AI incomplet');
-    return {
-      verdict: parsed.verdict,
-      sfaturi_brutale: parsed.sfaturi_brutale.slice(0, 5),
-      plan_actiune: parsed.plan_actiune,
-      sursa_text: 'ai',
-    };
-  } catch (e) {
-    console.error('[budget-ai] fallback:', e instanceof Error ? e.message : e);
-    return texteFallback(data, calc);
+  const user = rezumatCalcul(data, calc);
+  // Ordinea: Claude -> Groq -> texte generate în cod. Planul nu pică niciodată din cauza AI-ului.
+  for (const [nume, call] of [['anthropic', callClaude], ['groq', callGroq]] as const) {
+    try {
+      const parsed = extrageJson(await call(user));
+      if (!valid(parsed)) throw new Error('JSON AI incomplet');
+      console.log(`[budget-ai] text generat de ${nume}`);
+      return {
+        verdict: parsed.verdict,
+        sfaturi_brutale: parsed.sfaturi_brutale.slice(0, 5),
+        plan_actiune: parsed.plan_actiune,
+        sursa_text: 'ai',
+      };
+    } catch (e) {
+      console.error(`[budget-ai] ${nume} a eșuat:`, e instanceof Error ? e.message : e);
+    }
   }
+  return texteFallback(data, calc);
 }
