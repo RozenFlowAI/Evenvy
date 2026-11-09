@@ -35,9 +35,13 @@ function normalize(body: Partial<BudgetFormData>): BudgetFormData {
 }
 
 async function saveLead(data: BudgetFormData, result: BudgetResult): Promise<string | null> {
+  // Backend-ul (Render free) poate dormi sau cădea: nu blocăm planul mai mult de 8s pentru salvarea lead-ului.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8_000);
   try {
     const res = await fetch(`${BACKEND_URL}/leads`, {
       method: 'POST',
+      signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: data.email,
@@ -55,8 +59,10 @@ async function saveLead(data: BudgetFormData, result: BudgetResult): Promise<str
     const json = await res.json();
     return json.lead_uuid ?? null;
   } catch (e) {
-    console.error('[leads] Failed to save lead:', e);
+    console.error('[leads] Failed to save lead:', e instanceof Error ? e.message : e);
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
